@@ -6,51 +6,54 @@
 
 @layer base {
   :root {
-    --background: 30 33% 98%;
-    --foreground: 222 30% 15%;
+    --background: 30 20% 97%;
+    --foreground: 225 25% 12%;
 
-    --card: 30 25% 96%;
-    --card-foreground: 222 30% 15%;
+    --card: 30 18% 95%;
+    --card-foreground: 225 25% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 30% 15%;
+    --popover: 30 15% 99%;
+    --popover-foreground: 225 25% 12%;
 
-    --primary: 12 76% 62%;
+    --primary: 14 80% 56%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 25% 20%;
-    --secondary-foreground: 30 33% 98%;
+    --secondary: 225 20% 16%;
+    --secondary-foreground: 30 20% 97%;
 
-    --muted: 30 15% 92%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 30 12% 91%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 38 90% 62%;
-    --accent-foreground: 222 30% 15%;
+    --accent: 38 92% 58%;
+    --accent-foreground: 225 25% 12%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 56%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 90%;
-    --input: 30 15% 90%;
-    --ring: 12 76% 62%;
+    --border: 30 10% 90%;
+    --input: 30 10% 90%;
+    --ring: 14 80% 56%;
 
     --radius: 1rem;
 
-    --coaching: 170 60% 45%;
+    --coaching: 168 55% 42%;
     --coaching-foreground: 0 0% 100%;
-    --coaching-soft: 170 40% 95%;
+    --coaching-soft: 168 35% 95%;
 
-    --coaching-rewrite: 260 55% 58%;
-    --coaching-rewrite-soft: 260 40% 96%;
+    --coaching-rewrite: 258 50% 55%;
+    --coaching-rewrite-soft: 258 35% 96%;
 
-    --coaching-humor: 38 85% 55%;
-    --coaching-humor-soft: 38 50% 95%;
+    --coaching-humor: 38 80% 52%;
+    --coaching-humor-soft: 38 45% 95%;
 
-    --coaching-interrupt: 12 76% 62%;
-    --coaching-interrupt-soft: 12 50% 96%;
+    --coaching-interrupt: 14 80% 56%;
+    --coaching-interrupt-soft: 14 45% 96%;
 
-    --success: 152 60% 48%;
+    --success: 155 55% 45%;
     --success-foreground: 0 0% 100%;
+
+    --surface-elevated: 30 15% 99%;
+    --surface-sunken: 30 12% 93%;
 
     --font-heading: 'Space Grotesk', sans-serif;
     --font-body: 'DM Sans', sans-serif;
@@ -89,6 +92,39 @@
   .font-body {
     font-family: var(--font-body);
   }
+
+  .glass {
+    @apply bg-background/80 backdrop-blur-xl;
+  }
+
+  .glass-card {
+    @apply bg-card/70 backdrop-blur-lg border border-border/60;
+  }
+
+  .surface-elevated {
+    background: hsl(var(--surface-elevated));
+    box-shadow: 0 1px 3px 0 hsl(var(--foreground) / 0.04), 0 1px 2px -1px hsl(var(--foreground) / 0.04);
+  }
+
+  .shadow-soft {
+    box-shadow: 0 2px 8px -2px hsl(var(--foreground) / 0.06), 0 4px 16px -4px hsl(var(--foreground) / 0.08);
+  }
+
+  .shadow-glow-primary {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.1), 0 4px 20px -4px hsl(var(--primary) / 0.2);
+  }
+
+  .shadow-glow-coaching {
+    box-shadow: 0 0 0 1px hsl(var(--coaching) / 0.1), 0 4px 16px -4px hsl(var(--coaching) / 0.15);
+  }
+
+  .gradient-primary {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(14 85% 48%));
+  }
+
+  .gradient-warm {
+    background: linear-gradient(180deg, hsl(var(--background)), hsl(30 15% 94%));
+  }
 }
 
 @keyframes pulse-ring {
@@ -112,13 +148,18 @@
   to { opacity: 1; }
 }
 
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes coaching-enter {
-  0% { transform: translateY(20px) scale(0.96); opacity: 0; }
+  0% { transform: translateY(12px) scale(0.97); opacity: 0; }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 @keyframes coaching-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--coaching) / 0.3); }
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--coaching) / 0.2); }
   50% { box-shadow: 0 0 0 6px hsl(var(--coaching) / 0); }
 }
 
@@ -131,13 +172,28 @@
 }
 
 @keyframes voice-wave {
-  0%, 100% { height: 12px; }
-  50% { height: 28px; }
+  0%, 100% { height: 8px; }
+  50% { height: 24px; }
 }
 
 @keyframes listening-glow {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
-  50% { box-shadow: 0 0 0 12px hsl(var(--primary) / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); }
+  50% { box-shadow: 0 0 0 14px hsl(var(--primary) / 0); }
+}
+
+@keyframes mic-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes stagger-fade {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-pulse-ring {
@@ -145,7 +201,7 @@
 }
 
 .animate-slide-up {
-  animation: slide-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-slide-down {
@@ -156,8 +212,12 @@
   animation: fade-in 0.3s ease-out forwards;
 }
 
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 .animate-coaching-enter {
-  animation: coaching-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: coaching-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-coaching-pulse {
@@ -172,6 +232,14 @@
   animation: listening-glow 1.5s ease-in-out infinite;
 }
 
+.animate-mic-breathe {
+  animation: mic-breathe 2s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
 .voice-bar {
   animation: voice-wave 0.8s ease-in-out infinite;
 }
@@ -180,3 +248,10 @@
 .voice-bar:nth-child(3) { animation-delay: 0.2s; }
 .voice-bar:nth-child(4) { animation-delay: 0.15s; }
 .voice-bar:nth-child(5) { animation-delay: 0.25s; }
+
+.stagger-1 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.05s both; }
+.stagger-2 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both; }
+.stagger-3 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both; }
+.stagger-4 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
+.stagger-5 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
+.stagger-6 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
