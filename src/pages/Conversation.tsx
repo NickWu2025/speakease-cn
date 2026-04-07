@@ -42,7 +42,6 @@ const scenarioStarters: Record<string, { title: string; partnerName: string; aiO
   },
 };
 
-// Simulated conversation turns with layered coaching
 const conversationScript = [
   {
     userText: "Oh yeah, I just started this semester. It's been pretty intense so far.",
@@ -131,7 +130,6 @@ const Conversation = () => {
   const simulateTurn = useCallback(() => {
     const turn = conversationScript[turnCount % conversationScript.length];
 
-    // User message
     setMessages((prev) => [
       ...prev,
       { id: prev.length + 1, role: "user", text: turn.userText },
@@ -139,12 +137,10 @@ const Conversation = () => {
     setStatus("thinking");
     setIsListening(false);
 
-    // Coaching tip appears
     setTimeout(() => {
       setCurrentCoaching(turn.coaching);
     }, turn.delay.coaching);
 
-    // AI response
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
@@ -152,8 +148,6 @@ const Conversation = () => {
       ]);
       setStatus("idle");
       setTurnCount((t) => t + 1);
-
-      // Clear coaching after reading time
       setTimeout(() => setCurrentCoaching(null), 5000);
     }, turn.delay.ai);
   }, [turnCount]);
@@ -182,48 +176,48 @@ const Conversation = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
-      {/* Header */}
-      <div className="pt-12 pb-3 px-5 flex items-center justify-between border-b border-border bg-background/90 backdrop-blur-md sticky top-0 z-10">
-        <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
-          <ArrowLeft className="w-5 h-5" />
+      {/* Header — frosted glass */}
+      <div className="pt-12 pb-2.5 px-5 flex items-center justify-between glass sticky top-0 z-10 border-b border-border/40">
+        <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 -ml-1.5 rounded-lg hover:bg-muted/50">
+          <ArrowLeft className="w-[18px] h-[18px]" />
         </button>
-        <div className="text-center">
-          <p className="text-sm font-heading font-semibold text-foreground">{scenario.title}</p>
-          <div className="flex items-center justify-center gap-2 mt-0.5">
-            <div className={`w-1.5 h-1.5 rounded-full ${status === "listening" ? "bg-primary animate-pulse" : status === "thinking" ? "bg-accent animate-pulse" : "bg-muted-foreground/40"}`} />
-            <p className="text-[11px] text-muted-foreground">
-              {status === "listening" ? "Listening…" : status === "thinking" ? `${scenario.partnerName} is typing…` : "Your turn"}
+        <div className="text-center flex-1">
+          <p className="text-[14px] font-heading font-semibold text-foreground leading-tight">{scenario.title}</p>
+          <div className="flex items-center justify-center gap-1.5 mt-0.5">
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors ${status === "listening" ? "bg-primary animate-pulse" : status === "thinking" ? "bg-accent animate-pulse" : "bg-muted-foreground/30"}`} />
+            <p className="text-[11px] text-muted-foreground font-medium">
+              {status === "listening" ? "Listening…" : status === "thinking" ? `${scenario.partnerName} is thinking…` : "Your turn"}
             </p>
-            <span className="text-[11px] text-muted-foreground/60">·</span>
-            <span className="text-[11px] text-muted-foreground/60 tabular-nums">{formatTime(sessionDuration)}</span>
+            <span className="text-[11px] text-muted-foreground/40">·</span>
+            <span className="text-[11px] text-muted-foreground/40 tabular-nums font-medium">{formatTime(sessionDuration)}</span>
           </div>
         </div>
         <button
           onClick={endSession}
-          className="text-xs font-medium text-destructive/70 bg-destructive/8 px-3 py-1.5 rounded-full hover:bg-destructive/15 hover:text-destructive transition-colors"
+          className="text-[12px] font-semibold text-destructive/80 px-3 py-1.5 rounded-full hover:bg-destructive/10 transition-colors"
         >
           End
         </button>
       </div>
 
       {/* AI Partner Bar */}
-      <div className="flex items-center gap-3 px-5 py-3 border-b border-border/50">
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-border/30 bg-background">
         <div className="relative">
-          <img src={aiAvatar} alt={scenario.partnerName} width={40} height={40} className="rounded-full ring-2 ring-primary/20" />
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-background" />
+          <img src={aiAvatar} alt={scenario.partnerName} width={38} height={38} className="rounded-full ring-2 ring-primary/15 shadow-sm" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-success border-[2px] border-background" />
         </div>
-        <div className="flex-1">
-          <p className="text-sm font-heading font-semibold text-foreground">{scenario.partnerName}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-[14px] font-heading font-semibold text-foreground">{scenario.partnerName}</p>
           <p className="text-[11px] text-muted-foreground">AI conversation partner</p>
         </div>
-        <div className="flex items-center gap-1.5 bg-coaching-soft px-2.5 py-1 rounded-full">
-          <div className="w-1.5 h-1.5 rounded-full bg-coaching" />
-          <span className="text-[10px] font-semibold text-coaching uppercase tracking-wider">Coach active</span>
+        <div className="flex items-center gap-1.5 bg-coaching-soft px-2.5 py-1 rounded-full shadow-glow-coaching">
+          <div className="w-1.5 h-1.5 rounded-full bg-coaching animate-pulse" />
+          <span className="text-[10px] font-semibold text-coaching uppercase tracking-wider">Coach on</span>
         </div>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
         {messages.map((msg, idx) => (
           <ChatBubble
             key={msg.id}
@@ -233,7 +227,6 @@ const Conversation = () => {
           />
         ))}
 
-        {/* Inline coaching — appears in flow */}
         {currentCoaching && (
           <div className="pl-10">
             <CoachingTip
@@ -249,9 +242,8 @@ const Conversation = () => {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Voice Controls */}
-      <div className="pb-8 pt-4 px-5 bg-background/95 backdrop-blur-sm border-t border-border">
-        {/* Listening wave */}
+      {/* Voice Controls — premium bottom bar */}
+      <div className="pb-8 pt-3 px-5 glass border-t border-border/30">
         {isListening && (
           <div className="flex justify-center mb-3 animate-fade-in">
             <VoiceWave active={isListening} />
@@ -261,7 +253,7 @@ const Conversation = () => {
         <div className="flex items-center justify-center gap-6">
           <button
             onClick={endSession}
-            className="w-11 h-11 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
             aria-label="End session"
           >
             <Square className="w-4 h-4" />
@@ -269,10 +261,10 @@ const Conversation = () => {
 
           <button
             onClick={toggleListening}
-            className={`w-16 h-16 rounded-full flex items-center justify-center transition-all active:scale-95 ${
+            className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 ${
               isListening
-                ? "bg-primary text-primary-foreground shadow-lg animate-listening-glow"
-                : "bg-card border-2 border-primary text-primary hover:bg-primary/5 shadow-md"
+                ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
+                : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
             }`}
             aria-label={isListening ? "Stop speaking" : "Start speaking"}
           >
@@ -282,7 +274,7 @@ const Conversation = () => {
           <div className="w-11 h-11" />
         </div>
 
-        <p className="text-center text-[11px] text-muted-foreground mt-2.5 animate-fade-in">
+        <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
           {isListening ? "Tap when done speaking" : status === "thinking" ? `Waiting for ${scenario.partnerName}…` : "Tap the mic to respond"}
         </p>
       </div>
