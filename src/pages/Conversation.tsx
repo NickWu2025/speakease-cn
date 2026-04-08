@@ -1,10 +1,35 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Mic, MicOff, Square } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 import CoachingTip, { CoachingLayer, CoachingFlavor } from "@/components/CoachingTip";
 import ChatBubble from "@/components/ChatBubble";
 import VoiceWave from "@/components/VoiceWave";
+import { getConversationReply, GPTMessage } from "@/lib/gpt";
+
+// Web Speech API type declarations
+interface ISpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+declare global {
+  interface Window {
+    SpeechRecognition: new () => ISpeechRecognition;
+    webkitSpeechRecognition: new () => ISpeechRecognition;
+  }
+}
 
 interface Message {
   id: number;
@@ -42,67 +67,11 @@ const scenarioStarters: Record<string, { title: string; partnerName: string; aiO
   },
 };
 
-const conversationScript = [
-  {
-    userText: "Oh yeah, I just started this semester. It's been pretty intense so far.",
-    coaching: {
-      layer: "subtle" as CoachingLayer,
-      flavor: "suggestion" as CoachingFlavor,
-      text: 'Ask about their weekend — "What have you been up to outside class?"',
-    },
-    aiFollowup: "I feel that! The first few weeks are always a lot. Have you found any good spots to study around campus?",
-    delay: { coaching: 600, ai: 2200 },
-  },
-  {
-    userText: "I actually came with a friend, but they disappeared somewhere. So here I am!",
-    coaching: {
-      layer: "rewrite" as CoachingLayer,
-      flavor: "humor" as CoachingFlavor,
-      text: '"My friend vanished into thin air, so I figured I\'d actually socialize for once."',
-      originalText: "I actually came with a friend, but they disappeared somewhere.",
-    },
-    aiFollowup: "Ha, classic move! Well, lucky me — I get the good conversation then. So what do you do when you're not rescuing yourself at parties?",
-    delay: { coaching: 500, ai: 2400 },
-  },
-  {
-    userText: "I think Tokyo would be amazing. The food, the culture, everything.",
-    coaching: {
-      layer: "rewrite" as CoachingLayer,
-      flavor: "rewrite" as CoachingFlavor,
-      text: '"Honestly, I\'d pick Tokyo in a heartbeat — the street food alone would be worth it."',
-      originalText: "I think Tokyo would be amazing. The food, the culture, everything.",
-    },
-    aiFollowup: "Amazing choice! I've been dreaming about visiting Shibuya. What specifically about the culture draws you in?",
-    delay: { coaching: 700, ai: 2800 },
-  },
-  {
-    userText: "Um... I don't know... I guess I just like it.",
-    coaching: {
-      layer: "interrupt" as CoachingLayer,
-      flavor: "interrupt" as CoachingFlavor,
-      text: "You're being too vague — try being specific! Say something like: \"I love how detailed everything is — even convenience store food is an experience.\"",
-    },
-    aiFollowup: "I get that! Sometimes it's just a vibe that pulls you in. For me, it's the mix of tradition and futurism — temples next to neon streets. Have you traveled much in Asia?",
-    delay: { coaching: 400, ai: 3000 },
-  },
-  {
-    userText: "Not really, but I want to. I've been saving up for it actually.",
-    coaching: {
-      layer: "subtle" as CoachingLayer,
-      flavor: "nudge" as CoachingFlavor,
-      text: "Nice! Now flip it — ask them where they'd go.",
-    },
-    aiFollowup: "That's awesome that you're actually making it happen! I respect that. Most people just talk about it but never plan.",
-    delay: { coaching: 800, ai: 2000 },
-  },
-];
-
 const Conversation = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get("mode") || "improv";
   const scenarioId = searchParams.get("scenario") || "improv";
-
   const scenario = scenarioStarters[scenarioId] || scenarioStarters.improv;
 
   const [messages, setMessages] = useState<Message[]>([
@@ -110,9 +79,18 @@ const Conversation = () => {
   ]);
   const [isListening, setIsListening] = useState(false);
   const [currentCoaching, setCurrentCoaching] = useState<CoachingEvent | null>(null);
-  const [turnCount, setTurnCount] = useState(0);
   const [status, setStatus] = useState<"idle" | "listening" | "thinking">("idle");
   const [sessionDuration, setSessionDuration] = useState(0);
+  const [transcript, setTranscript] = useState("");
+  const [speechSupported] = useState(
+    () => typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+  );
+
+  // GPT conversation history (excludes the initial AI opener for cleanliness)
+  const gptHistoryRef = useRef<GPTMessage[]>([
+    { role: "assistant", content: scenario.aiOpener },
+  ]);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
 
@@ -127,46 +105,136 @@ const Conversation = () => {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
-  const simulateTurn = useCallback(() => {
-    const turn = conversationScript[turnCount % conversationScript.length];
+  const submitTurn = async (userText: string) => {
+    if (!userText.trim()) {
+      setIsListening(false);
+      setStatus("idle");
+      return;
+    }
+
+    const trimmed = userText.trim();
 
     setMessages((prev) => [
       ...prev,
-      { id: prev.length + 1, role: "user", text: turn.userText },
+      { id: prev.length + 1, role: "user", text: trimmed },
     ]);
+    setTranscript("");
     setStatus("thinking");
     setIsListening(false);
+    setCurrentCoaching(null);
 
-    setTimeout(() => {
-      setCurrentCoaching(turn.coaching);
-    }, turn.delay.coaching);
+    // Add user message to GPT history
+    gptHistoryRef.current = [
+      ...gptHistoryRef.current,
+      { role: "user", content: trimmed },
+    ];
 
-    setTimeout(() => {
+    try {
+      const result = await getConversationReply(
+        gptHistoryRef.current,
+        scenarioId,
+        scenario.partnerName
+      );
+
+      // Add AI reply to GPT history
+      gptHistoryRef.current = [
+        ...gptHistoryRef.current,
+        { role: "assistant", content: result.reply },
+      ];
+
       setMessages((prev) => [
         ...prev,
-        { id: prev.length + 1, role: "ai", text: turn.aiFollowup },
+        { id: prev.length + 1, role: "ai", text: result.reply },
       ]);
-      setStatus("idle");
-      setTurnCount((t) => t + 1);
-      setTimeout(() => setCurrentCoaching(null), 5000);
-    }, turn.delay.ai);
-  }, [turnCount]);
+
+      if (result.coaching) {
+        const coachingLayerMap: Record<string, CoachingLayer> = {
+          subtle: "subtle",
+          rewrite: "rewrite",
+          interrupt: "interrupt",
+        };
+        const coachingFlavorMap: Record<string, CoachingFlavor> = {
+          subtle: "nudge",
+          rewrite: "rewrite",
+          interrupt: "interrupt",
+        };
+        setCurrentCoaching({
+          layer: coachingLayerMap[result.coaching.type] ?? "subtle",
+          flavor: coachingFlavorMap[result.coaching.type] ?? "suggestion",
+          text: result.coaching.text,
+          originalText: result.coaching.original,
+        });
+        setTimeout(() => setCurrentCoaching(null), 8000);
+      }
+    } catch (err) {
+      console.error("GPT error:", err);
+      setMessages((prev) => [
+        ...prev,
+        { id: prev.length + 1, role: "ai", text: "Sorry, I had trouble responding. Please try again." },
+      ]);
+    }
+
+    setStatus("idle");
+  };
 
   const toggleListening = () => {
     if (isListening) {
-      simulateTurn();
-    } else {
-      setIsListening(true);
-      setStatus("listening");
-      setCurrentCoaching(null);
+      recognitionRef.current?.stop();
+      return;
     }
+
+    if (!speechSupported) {
+      alert("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+
+    const SpeechRecognitionAPI = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+
+    let finalTranscript = "";
+
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let i = event.results.length - 1; i >= 0; i--) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript;
+        } else {
+          interim = result[0].transcript;
+        }
+      }
+      setTranscript(finalTranscript + interim);
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error !== "aborted") {
+        console.error("Speech recognition error:", event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      recognitionRef.current = null;
+      submitTurn(finalTranscript);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
+    setStatus("listening");
+    setTranscript("");
+    setCurrentCoaching(null);
   };
 
   const endSession = () => {
+    recognitionRef.current?.stop();
     clearInterval(timerRef.current);
     navigate("/recap", {
       state: {
         scenario: scenario.title,
+        scenarioId,
         messages,
         mode,
         duration: sessionDuration,
@@ -176,7 +244,7 @@ const Conversation = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
-      {/* Header — frosted glass */}
+      {/* Header */}
       <div className="pt-12 pb-2.5 px-5 flex items-center justify-between glass sticky top-0 z-10 border-b border-border/40">
         <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 -ml-1.5 rounded-lg hover:bg-muted/50">
           <ArrowLeft className="w-[18px] h-[18px]" />
@@ -242,11 +310,16 @@ const Conversation = () => {
         <div ref={chatEndRef} />
       </div>
 
-      {/* Voice Controls — premium bottom bar */}
+      {/* Voice Controls */}
       <div className="pb-8 pt-3 px-5 glass border-t border-border/30">
         {isListening && (
-          <div className="flex justify-center mb-3 animate-fade-in">
+          <div className="flex flex-col items-center gap-2 mb-3 animate-fade-in">
             <VoiceWave active={isListening} />
+            {transcript && (
+              <p className="text-[12px] text-muted-foreground text-center max-w-[280px] leading-relaxed italic px-3 py-1.5 bg-muted/40 rounded-xl">
+                {transcript}
+              </p>
+            )}
           </div>
         )}
 
@@ -261,7 +334,8 @@ const Conversation = () => {
 
           <button
             onClick={toggleListening}
-            className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 ${
+            disabled={status === "thinking"}
+            className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
               isListening
                 ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
                 : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
