@@ -20,6 +20,7 @@ interface ISpeechRecognition extends EventTarget {
 }
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
+  resultIndex: number;
 }
 interface SpeechRecognitionErrorEvent extends Event {
   error: string;
@@ -198,7 +199,7 @@ const Conversation = () => {
 
     recognition.onresult = (event) => {
       let interim = "";
-      for (let i = event.results.length - 1; i >= 0; i--) {
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
           finalTranscript += result[0].transcript;
