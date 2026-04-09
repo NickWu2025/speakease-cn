@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Bun lock files (use package-lock.json for npm/Lovable compatibility)
+bun.lock
+bun.lockb
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
