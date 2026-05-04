@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Sparkles, Lightbulb, RotateCcw, Loader2, TrendingUp, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Sparkles, Lightbulb, RotateCcw, Loader2, TrendingUp, CheckCircle2, BookOpen } from "lucide-react";
 import { analyzeSession, RecapAnalysis, CoachingDimension, DimensionFeedback } from "@/lib/gpt";
+import { extractStories } from "@/lib/storyAI";
+import { saveStory } from "@/lib/storyStore";
+import { saveSessionRecord } from "@/lib/sessionStore";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ── Dimension config ──────────────────────────────────────────────────
 const DIMENSION_CONFIG: Record<
@@ -89,6 +93,7 @@ function DimensionCard({
 const SessionRecap = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const state = location.state as {
     scenario?: string;
     scenarioId?: string;
@@ -104,6 +109,7 @@ const SessionRecap = () => {
   const [analysis, setAnalysis] = useState<RecapAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [savedStoryCount, setSavedStoryCount] = useState(0);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -112,9 +118,36 @@ const SessionRecap = () => {
       setLoading(false);
       return;
     }
+    // Run analysis and story extraction in parallel
     analyzeSession(messages, scenarioTitle)
-      .then((result) => { setAnalysis(result); setLoading(false); })
-      .catch((err) => { console.error("Recap error:", err); setError(true); setLoading(false); });
+      .then((result) => {
+        setAnalysis(result);
+        if (user) {
+          saveSessionRecord(user.id, {
+            id: `session_${Date.now()}`,
+            scenarioTitle,
+            scenarioId: state?.scenarioId,
+            date: new Date().toISOString(),
+            duration,
+            dimensions: {
+              content:  result.dimensions.content.rating,
+              structure: result.dimensions.structure.rating,
+              delivery: result.dimensions.delivery.rating,
+            },
+          });
+        }
+      })
+      .catch((err) => { console.error("Recap error:", err); setError(true); })
+      .finally(() => setLoading(false));
+
+    if (user) {
+      extractStories(messages, scenarioTitle, state?.scenarioId)
+        .then((stories) => {
+          stories.forEach((s) => saveStory(user.id, s));
+          if (stories.length > 0) setSavedStoryCount(stories.length);
+        })
+        .catch((err) => console.error("Story extraction:", err));
+    }
   }, []);
 
   return (
@@ -231,6 +264,27 @@ const SessionRecap = () => {
                 Practice Again
               </button>
             </div>
+
+            {/* ── Story Library banner ── */}
+            {savedStoryCount > 0 && (
+              <div className="stagger-6 rounded-2xl bg-primary/5 border border-primary/10 p-4 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-semibold text-foreground">
+                    {savedStoryCount} {savedStoryCount === 1 ? "story" : "stories"} saved 📖
+                  </p>
+                  <p className="text-[12px] text-muted-foreground">Added to your Story Library</p>
+                </div>
+                <button
+                  onClick={() => navigate("/stories")}
+                  className="text-[12px] font-semibold text-primary shrink-0 hover:underline"
+                >
+                  View →
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>

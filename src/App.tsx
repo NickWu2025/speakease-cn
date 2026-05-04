@@ -11,6 +11,13 @@ import ScenarioSelect from "./pages/ScenarioSelect";
 import RolePlaySetup from "./pages/RolePlaySetup";
 import Conversation from "./pages/Conversation";
 import SessionRecap from "./pages/SessionRecap";
+import WarmupHub from "./pages/WarmupHub";
+import WarmupExercises from "./pages/WarmupExercises";
+import EyeContactTrainer from "./pages/EyeContactTrainer";
+import FillerWordTrainer from "./pages/FillerWordTrainer";
+import StoryLibrary from "./pages/StoryLibrary";
+import StoryDetail from "./pages/StoryDetail";
+import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +44,13 @@ function AppRoutes() {
       <Route path="/roleplay-setup" element={<RequireAuth><RolePlaySetup /></RequireAuth>} />
       <Route path="/conversation" element={<RequireAuth><Conversation /></RequireAuth>} />
       <Route path="/recap" element={<RequireAuth><SessionRecap /></RequireAuth>} />
+      <Route path="/warmup" element={<RequireAuth><WarmupHub /></RequireAuth>} />
+      <Route path="/warmup/exercises" element={<RequireAuth><WarmupExercises /></RequireAuth>} />
+      <Route path="/warmup/eye-contact" element={<RequireAuth><EyeContactTrainer /></RequireAuth>} />
+      <Route path="/warmup/filler" element={<RequireAuth><FillerWordTrainer /></RequireAuth>} />
+      <Route path="/stories" element={<RequireAuth><StoryLibrary /></RequireAuth>} />
+      <Route path="/stories/:id" element={<RequireAuth><StoryDetail /></RequireAuth>} />
+      <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -1,8 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Zap, Flame, ChevronRight, Laugh, LogOut, User } from "lucide-react";
+import { MessageCircle, ChevronRight, Gamepad2, LogOut, User, BookOpen } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { PROFICIENCY_META, GOALS } from "@/types/profile";
+import { loadStories } from "@/lib/storyStore";
+import { loadSessions } from "@/lib/sessionStore";
+import ProgressWidget from "@/components/ProgressWidget";
 
 const SCENARIO_CONFIG = {
   classmate: { label: "Meeting a Classmate", emoji: "👋", path: "/conversation?scenario=classmate" },
@@ -18,6 +21,8 @@ const Home = () => {
   const firstName = user?.name?.split(" ")[0] ?? "there";
   const levelMeta = profile ? PROFICIENCY_META[profile.proficiencyLevel] : null;
   const primaryGoalLabel = profile?.goals[0] ? GOALS.find((g) => g.id === profile.goals[0])?.label : null;
+  const storyCount = user ? loadStories(user.id).length : 0;
+  const sessions = user ? loadSessions(user.id) : [];
 
   const handleSignOut = () => {
     signOut();
@@ -97,10 +102,10 @@ const Home = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[17px] font-heading font-semibold text-primary-foreground">
-                Small Talk Practice
+                Conversation Practice
               </h2>
               <p className="text-primary-foreground/75 text-[13px] mt-0.5">
-                Classmates, parties, networking
+                Social, interview, presentation & more
               </p>
             </div>
             <ChevronRight className="w-5 h-5 text-primary-foreground/50 group-hover:translate-x-0.5 transition-transform" />
@@ -108,83 +113,55 @@ const Home = () => {
         </button>
 
         <button
-          onClick={() => navigate("/conversation?mode=improv")}
-          className="stagger-2 group w-full rounded-2xl bg-secondary p-5 text-left shadow-soft hover:shadow-lg transition-all active:scale-[0.98] relative overflow-hidden"
+          onClick={() => navigate("/stories")}
+          className="stagger-2 group w-full rounded-2xl bg-card p-5 text-left shadow-soft hover:shadow-lg transition-all active:scale-[0.98] relative overflow-hidden border border-border/50"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(230_80%_97%)] to-[hsl(250_60%_95%)]" />
           <div className="relative flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl bg-secondary-foreground/10 flex items-center justify-center shrink-0">
-              <Zap className="w-5 h-5 text-secondary-foreground" />
+            <div className="w-11 h-11 rounded-xl bg-[hsl(230_70%_88%)] flex items-center justify-center shrink-0">
+              <BookOpen className="w-5 h-5 text-[hsl(230_55%_45%)]" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-[17px] font-heading font-semibold text-secondary-foreground">
-                Improv Mode
-              </h2>
-              <p className="text-secondary-foreground/60 text-[13px] mt-0.5">
-                Random topics — think fast, speak naturally
+              <div className="flex items-center gap-2">
+                <h2 className="text-[17px] font-heading font-semibold text-foreground">
+                  Story Library
+                </h2>
+                {storyCount > 0 && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[hsl(230_70%_88%)] text-[hsl(230_55%_45%)] border border-[hsl(230_60%_80%)]">
+                    {storyCount}
+                  </span>
+                )}
+              </div>
+              <p className="text-muted-foreground text-[13px] mt-0.5">
+                Refine your stories, debate with AI
               </p>
             </div>
-            <ChevronRight className="w-5 h-5 text-secondary-foreground/30 group-hover:translate-x-0.5 transition-transform" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-[hsl(230_55%_45%)] group-hover:translate-x-0.5 transition-all" />
           </div>
         </button>
 
         <button
-          onClick={() => navigate("/conversation?mode=humor&scenario=humor")}
+          onClick={() => navigate("/warmup")}
           className="stagger-3 group w-full rounded-2xl bg-card p-5 text-left shadow-soft hover:shadow-lg transition-all active:scale-[0.98] relative overflow-hidden border border-border/50"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(45_80%_97%)] to-[hsl(25_70%_95%)]" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(152_80%_97%)] to-[hsl(180_60%_95%)]" />
           <div className="relative flex items-center gap-4">
-            <div className="w-11 h-11 rounded-xl bg-[hsl(38_90%_88%)] flex items-center justify-center shrink-0">
-              <Laugh className="w-5 h-5 text-[hsl(30_80%_45%)]" />
+            <div className="w-11 h-11 rounded-xl bg-[hsl(152_70%_88%)] flex items-center justify-center shrink-0">
+              <Gamepad2 className="w-5 h-5 text-[hsl(152_55%_32%)]" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[17px] font-heading font-semibold text-foreground">
-                Humor Practice
+                Warm-up Game
               </h2>
               <p className="text-muted-foreground text-[13px] mt-0.5">
-                Random prompts — be witty, get instant feedback
+                Exercises, humor, eye contact & filler trainer
               </p>
             </div>
-            <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-[hsl(30_80%_45%)] group-hover:translate-x-0.5 transition-all" />
+            <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-[hsl(152_55%_32%)] group-hover:translate-x-0.5 transition-all" />
           </div>
         </button>
 
-        {/* Streak */}
-        <div className="stagger-4 mt-4 rounded-2xl surface-elevated p-4 flex items-center gap-4 border border-border/50">
-          <div className="w-11 h-11 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
-            <Flame className="w-5 h-5 text-accent" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold text-foreground">Daily Streak</p>
-            <p className="text-[12px] text-muted-foreground mt-0.5">Keep it going every day</p>
-          </div>
-          <div className="flex items-baseline gap-0.5">
-            <span className="text-[28px] font-heading font-bold text-primary leading-none">3</span>
-            <span className="text-[11px] text-muted-foreground font-medium">days</span>
-          </div>
-        </div>
-
-        {/* Recent Sessions */}
-        <div className="stagger-5 rounded-2xl surface-elevated p-4 border border-border/50">
-          <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Recent</p>
-          <div className="space-y-2.5">
-            {[
-              { title: "Party Conversation", time: "2 min ago", emoji: "🎉" },
-              { title: "Meeting a Classmate", time: "Yesterday", emoji: "👋" },
-            ].map((session) => (
-              <div key={session.title} className="flex items-center gap-3 rounded-xl hover:bg-muted/50 p-2 -mx-2 transition-colors cursor-pointer">
-                <div className="w-9 h-9 rounded-lg bg-muted/70 flex items-center justify-center">
-                  <span className="text-base">{session.emoji}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-medium text-foreground">{session.title}</p>
-                  <p className="text-[12px] text-muted-foreground">{session.time}</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground/30" />
-              </div>
-            ))}
-          </div>
-        </div>
+        <ProgressWidget sessions={sessions} storyCount={storyCount} />
       </div>
 
       <div className="h-10" />
