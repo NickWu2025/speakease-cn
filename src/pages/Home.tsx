@@ -1,36 +1,91 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Zap, Flame, ChevronRight, Laugh } from "lucide-react";
+import { MessageCircle, Zap, Flame, ChevronRight, Laugh, LogOut, User } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
+import { useAuth } from "@/contexts/AuthContext";
+import { PROFICIENCY_META, GOALS } from "@/types/profile";
+
+const SCENARIO_CONFIG = {
+  classmate: { label: "Meeting a Classmate", emoji: "👋", path: "/conversation?scenario=classmate" },
+  party:     { label: "Party Conversation",  emoji: "🎉", path: "/conversation?scenario=party" },
+  networking:{ label: "Networking Event",    emoji: "🤝", path: "/conversation?scenario=networking" },
+  improv:    { label: "Improv Mode",         emoji: "⚡", path: "/conversation?mode=improv" },
+};
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
+
+  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const levelMeta = profile ? PROFICIENCY_META[profile.proficiencyLevel] : null;
+  const primaryGoalLabel = profile?.goals[0] ? GOALS.find((g) => g.id === profile.goals[0])?.label : null;
+
+  const handleSignOut = () => {
+    signOut();
+    navigate("/auth");
+  };
 
   return (
     <div className="min-h-screen gradient-warm flex flex-col">
-      {/* Hero */}
-      <div className="pt-16 pb-10 px-6 text-center">
-        <div className="flex justify-center mb-5">
+      {/* Header */}
+      <div className="pt-14 pb-4 px-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <div className="relative">
             <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl scale-150 animate-mic-breathe" />
-            <img
-              src={aiAvatar}
-              alt="SpeakFlow"
-              width={80}
-              height={80}
-              className="relative rounded-full shadow-glow-primary ring-4 ring-background"
-            />
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt={user.name} width={44} height={44} className="relative rounded-full shadow-glow-primary ring-2 ring-background" />
+            ) : (
+              <img src={aiAvatar} alt="SpeakFlow" width={44} height={44} className="relative rounded-full shadow-glow-primary ring-2 ring-background" />
+            )}
+          </div>
+          <div>
+            <p className="text-[11px] text-muted-foreground font-medium">Welcome back</p>
+            <h1 className="text-[17px] font-heading font-bold text-foreground leading-tight">{firstName} 👋</h1>
           </div>
         </div>
-        <h1 className="text-[2rem] font-heading font-bold text-foreground tracking-tight leading-tight">
-          SpeakFlow
-        </h1>
-        <p className="text-muted-foreground mt-2.5 text-[15px] max-w-[260px] mx-auto leading-relaxed">
-          Practice real conversations with live AI coaching
-        </p>
+        <button onClick={handleSignOut} className="p-2 rounded-xl hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground">
+          <LogOut className="w-4 h-4" />
+        </button>
       </div>
 
+      {/* Profile card (if onboarded) */}
+      {profile && levelMeta && (
+        <div className="mx-5 mb-4 rounded-2xl bg-card border border-border/50 shadow-soft px-4 py-3.5 flex items-center gap-3">
+          <div className={`px-3 py-1 rounded-full border text-[11px] font-semibold uppercase tracking-wider ${levelMeta.colorClass}`}>
+            {profile.proficiencyLevel === "beginner" ? "🌱" : profile.proficiencyLevel === "intermediate" ? "🔥" : "⚡"} {levelMeta.label}
+          </div>
+          {primaryGoalLabel && (
+            <p className="text-[12px] text-muted-foreground flex-1 truncate">Goal: {primaryGoalLabel}</p>
+          )}
+          <button onClick={() => navigate("/onboarding")} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+            <User className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
+      {/* Recommended (if profile has recommendations) */}
+      {profile?.recommendedScenarios?.length > 0 && (
+        <div className="px-5 mb-2">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recommended for you</p>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            {profile.recommendedScenarios.slice(0, 3).map((scenId) => {
+              const cfg = SCENARIO_CONFIG[scenId as keyof typeof SCENARIO_CONFIG];
+              if (!cfg) return null;
+              return (
+                <button
+                  key={scenId}
+                  onClick={() => navigate(cfg.path)}
+                  className="shrink-0 flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2 text-[13px] font-medium text-primary hover:bg-primary/15 transition-all"
+                >
+                  <span>{cfg.emoji}</span> {cfg.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Mode Cards */}
-      <div className="px-5 flex-1 flex flex-col gap-3.5 max-w-md mx-auto w-full">
+      <div className="px-5 flex-1 flex flex-col gap-3.5 max-w-md mx-auto w-full mt-2">
         <button
           onClick={() => navigate("/scenarios")}
           className="stagger-1 group w-full rounded-2xl gradient-primary p-5 text-left shadow-glow-primary hover:shadow-lg transition-all active:scale-[0.98] relative overflow-hidden"

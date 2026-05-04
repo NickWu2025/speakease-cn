@@ -189,6 +189,59 @@ Rules:
   return JSON.parse(raw) as RecapAnalysis;
 }
 
+export interface DiagnosticResult {
+  proficiencyLevel: "beginner" | "intermediate" | "advanced";
+  strengths: string[];
+  areasToImprove: string[];
+  recommendedScenarios: string[];
+  coachNote: string;
+}
+
+export async function analyzeOnboardingDiagnostic(
+  conversation: { role: "user" | "ai"; text: string }[],
+  goals: string[],
+  challenges: string[]
+): Promise<DiagnosticResult> {
+  const transcript = conversation
+    .map((m) => `${m.role === "user" ? "Learner" : "Coach"}: ${m.text}`)
+    .join("\n");
+
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `You are SpeakFlow, an AI English conversation coach. Analyze this short diagnostic conversation from a new user who wants to improve their English conversation skills.
+
+User's stated goals: ${goals.join(", ")}
+User's stated challenges: ${challenges.join(", ")}
+
+Based on the conversation, assess the user's proficiency and create their learning profile.
+
+Respond ONLY with a JSON object:
+{
+  "proficiencyLevel": "beginner" | "intermediate" | "advanced",
+  "strengths": ["<2 specific strengths observed from their responses>"],
+  "areasToImprove": ["<2 specific improvement areas>"],
+  "recommendedScenarios": ["<best scenario id from: classmate, party, networking, improv>", "<second best>"],
+  "coachNote": "<1 warm, personal sentence of encouragement based on what you noticed>"
+}
+
+Proficiency guide:
+- beginner: short responses, basic vocabulary, noticeable grammar gaps
+- intermediate: complete sentences, decent vocabulary, occasional errors
+- advanced: natural flow, varied vocabulary, expressive`,
+      },
+      { role: "user", content: `Diagnostic transcript:\n\n${transcript}` },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.7,
+  });
+
+  const raw = response.choices[0].message.content ?? "{}";
+  return JSON.parse(raw) as DiagnosticResult;
+}
+
 export async function speakText(text: string, signal?: AbortSignal): Promise<void> {
   const response = await client.audio.speech.create({
     model: "tts-1",
