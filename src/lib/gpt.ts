@@ -11,19 +11,32 @@ export interface GPTMessage {
   content: string;
 }
 
+export type CoachingDimension = "content" | "structure" | "delivery";
+
 export interface ConversationTurnResult {
   reply: string;
   coaching: {
     type: "subtle" | "rewrite" | "interrupt";
+    dimension: CoachingDimension;
     text: string;
     improved?: string;
     original?: string;
   } | null;
 }
 
+export interface DimensionFeedback {
+  rating: "strong" | "developing" | "needs-work";
+  observations: string[];
+  tip: string;
+}
+
 export interface RecapAnalysis {
-  practiced: string[];
-  moments: { original: string; improved: string; reason: string }[];
+  dimensions: {
+    content: DimensionFeedback;
+    structure: DimensionFeedback;
+    delivery: DimensionFeedback;
+  };
+  moments: { original: string; improved: string; reason: string; dimension: CoachingDimension }[];
   phrases: string[];
   encouragement: string;
 }
@@ -37,6 +50,21 @@ const SCENARIO_DESCRIPTIONS: Record<string, string> = {
   presentation: "a professional presentation with an audience",
   group_discussion: "a structured group discussion with multiple participants",
 };
+
+// Shared coaching JSON schema injected into every system prompt
+const COACHING_SCHEMA = `
+When including a coaching tip, use this exact shape and ALWAYS set "dimension":
+{
+  "type": "subtle" | "rewrite" | "interrupt",
+  "dimension": "content" | "structure" | "delivery",
+  "text": "<tip — focus on understandability and natural expression, NOT grammar>",
+  "original": "<user's exact phrase, only when type is 'rewrite'>",
+  "improved": "<more natural version, only when type is 'rewrite'>"
+}
+Dimension guide (pick the ONE that best fits):
+- "content"  → clarity of meaning, word choice, natural expression
+- "structure" → logical flow, sequencing, completeness of the response
+- "delivery"  → tone, engagement level, confidence, response length`;
 
 function buildRolePlayContext(rolePlay: RolePlayConfig): string {
   const personalityLine = PERSONALITY_DESC[rolePlay.personality] ?? rolePlay.personality;
@@ -56,22 +84,12 @@ Your job:
 3. Keep the interview realistic and appropriately challenging
 
 After the user's response, continue the interview naturally. Provide coaching ONLY when it would genuinely improve their interview technique.
+${COACHING_SCHEMA}
 
 Respond ONLY with a JSON object:
-{
-  "reply": "<your interviewer response + next question>",
-  "coaching": null
-}
-OR with a coaching tip when relevant:
-{
-  "reply": "<your interviewer response>",
-  "coaching": {
-    "type": "subtle" | "rewrite" | "interrupt",
-    "text": "<tip focused on interview skills: STAR structure, specificity, confidence>",
-    "original": "<user's phrase if rewriting>",
-    "improved": "<stronger version>"
-  }
-}`;
+{ "reply": "<your interviewer response + next question>", "coaching": null }
+OR with a tip (focused on STAR structure, specificity, confidence):
+{ "reply": "<your interviewer response>", "coaching": { ...coachingShape } }`;
 }
 
 function buildPresentationPrompt(partnerName: string, rolePlay: RolePlayConfig): string {
@@ -85,21 +103,12 @@ Your role:
 3. Keep the audience dynamic: sometimes enthusiastic, sometimes skeptical (based on your personality)
 4. Coaching should focus on: clarity, logical structure, audience engagement, confidence signals
 
+4. Coaching focuses on: clarity, logical structure, audience engagement, confidence signals.
+${COACHING_SCHEMA}
+
 Respond ONLY with a JSON object:
-{
-  "reply": "<your audience reaction + follow-up question or prompt>",
-  "coaching": null
-}
-OR:
-{
-  "reply": "<your reaction>",
-  "coaching": {
-    "type": "subtle" | "rewrite" | "interrupt",
-    "text": "<presentation coaching tip>",
-    "original": "<user's phrase if rewriting>",
-    "improved": "<clearer version>"
-  }
-}`;
+{ "reply": "<your audience reaction + follow-up>", "coaching": null }
+OR: { "reply": "<your reaction>", "coaching": { ...coachingShape } }`;
 }
 
 function buildGroupDiscussionPrompt(partnerName: string, rolePlay: RolePlayConfig): string {
@@ -115,21 +124,12 @@ Your role:
 3. Keep the discussion dynamic and intellectually engaging
 4. Coaching should focus on: making points clearly, backing up opinions, and participating assertively in group settings
 
+4. Coaching focuses on: clear argumentation, backing up opinions, assertive participation.
+${COACHING_SCHEMA}
+
 Respond ONLY with a JSON object:
-{
-  "reply": "<your moderator/group response>",
-  "coaching": null
-}
-OR:
-{
-  "reply": "<your response>",
-  "coaching": {
-    "type": "subtle" | "rewrite" | "interrupt",
-    "text": "<group discussion coaching tip>",
-    "original": "<user's phrase if applicable>",
-    "improved": "<stronger version>"
-  }
-}`;
+{ "reply": "<your moderator/group response>", "coaching": null }
+OR: { "reply": "<your response>", "coaching": { ...coachingShape } }`;
 }
 
 export async function generateOpener(
@@ -191,17 +191,11 @@ The user just responded to a humor prompt. Your job:
 3. Then introduce a FRESH new humor prompt for them to try
 
 Always keep the energy fun and supportive — never harsh.
+${COACHING_SCHEMA}
 
 Respond ONLY with a JSON object:
-{
-  "reply": "<your reaction + the new humor prompt>",
-  "coaching": {
-    "type": "rewrite" | "subtle",
-    "text": "<one concrete tip>",
-    "original": "<user's exact response if suggesting improvement>",
-    "improved": "<funnier version if applicable>"
-  }
-}
+{ "reply": "<your reaction + the new humor prompt>", "coaching": null }
+OR: { "reply": "<your reaction>", "coaching": { ...coachingShape } }
 If their response was genuinely funny and nothing needs improving, set coaching to null.`;
   } else if (scenarioId === "interview" && rolePlay) {
     systemPrompt = buildInterviewPrompt(partnerName, rolePlay);
@@ -214,22 +208,12 @@ If their response was genuinely funny and nothing needs improving, set coaching 
     systemPrompt = `You are ${partnerName}, playing the role of a friendly person in a scenario: ${scenarioDesc}.${roleCtx}
 
 Your job is to have a natural, engaging conversation. Keep your reply to 1-3 sentences. Ask a follow-up question when appropriate.
+${COACHING_SCHEMA}
 
 Respond ONLY with a JSON object:
-{
-  "reply": "<your conversational response as ${partnerName}>",
-  "coaching": null
-}
-OR if you have a useful coaching tip:
-{
-  "reply": "<your conversational response>",
-  "coaching": {
-    "type": "subtle" | "rewrite" | "interrupt",
-    "text": "<coaching tip>",
-    "original": "<user's phrase if rewriting>",
-    "improved": "<improved version>"
-  }
-}
+{ "reply": "<your conversational response as ${partnerName}>", "coaching": null }
+OR if you have a useful tip:
+{ "reply": "<your response>", "coaching": { ...coachingShape } }
 Only include coaching when it would genuinely help. Leave coaching null if what they said was good.`;
   }
 
@@ -253,29 +237,46 @@ export async function analyzeSession(
     .map((m) => `${m.role === "user" ? "User" : "AI Partner"}: ${m.text}`)
     .join("\n");
 
-  const systemPrompt = `You are SpeakFlow, an AI conversation coach. Analyze the following conversation transcript from a practice session titled "${scenarioTitle}".
+  const systemPrompt = `You are SpeakFlow, an AI conversation coach. Analyze this conversation transcript from a session titled "${scenarioTitle}".
 
-Provide structured feedback to help the user improve their conversational English skills.
+Structure your feedback across 3 dimensions. Focus on UNDERSTANDABILITY and NATURAL EXPRESSION — NOT grammar.
 
-Respond ONLY with a JSON object in this exact format:
+Respond ONLY with this exact JSON shape:
 {
-  "practiced": ["<skill 1>", "<skill 2>", "<skill 3>"],
+  "dimensions": {
+    "content": {
+      "rating": "strong" | "developing" | "needs-work",
+      "observations": ["<specific observation from the transcript>", "<second observation>"],
+      "tip": "<one actionable tip to improve content clarity or natural expression>"
+    },
+    "structure": {
+      "rating": "strong" | "developing" | "needs-work",
+      "observations": ["<observation about response organization or flow>", "<second observation>"],
+      "tip": "<one actionable tip to improve logical flow or completeness>"
+    },
+    "delivery": {
+      "rating": "strong" | "developing" | "needs-work",
+      "observations": ["<observation about tone, confidence, or engagement>", "<second observation>"],
+      "tip": "<one actionable tip to improve tone, engagement, or response length>"
+    }
+  },
   "moments": [
     {
       "original": "<exact phrase the user said>",
-      "improved": "<a more natural/expressive version>",
-      "reason": "<brief explanation why>"
+      "improved": "<more natural/expressive version>",
+      "reason": "<brief explanation>",
+      "dimension": "content" | "structure" | "delivery"
     }
   ],
   "phrases": ["<reusable phrase 1>", "<reusable phrase 2>", "<reusable phrase 3>"],
-  "encouragement": "<one warm, specific sentence of encouragement based on what they did well>"
+  "encouragement": "<one warm, specific sentence based on what they did well>"
 }
 
 Rules:
-- "practiced": 3 specific conversation skills they used in this session
-- "moments": 2-4 real moments from the transcript where phrasing could be improved (use exact quotes)
-- "phrases": 3 natural English phrases from the conversation they should remember and reuse
-- Keep all feedback constructive and specific to this actual conversation`;
+- Dimension ratings: "strong" = consistently good, "developing" = shows effort with room to grow, "needs-work" = clear gap to address
+- "moments": 2-4 real moments from the transcript with exact user quotes — tag each with the most relevant dimension
+- "phrases": 3 natural English expressions from this conversation worth reusing
+- Be specific to this actual conversation, not generic advice`;
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",

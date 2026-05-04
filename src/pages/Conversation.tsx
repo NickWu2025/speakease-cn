@@ -5,7 +5,7 @@ import aiAvatar from "@/assets/ai-avatar.png";
 import CoachingTip, { CoachingLayer, CoachingFlavor } from "@/components/CoachingTip";
 import ChatBubble from "@/components/ChatBubble";
 import VoiceWave from "@/components/VoiceWave";
-import { getConversationReply, generateOpener, speakText, GPTMessage } from "@/lib/gpt";
+import { getConversationReply, generateOpener, speakText, GPTMessage, CoachingDimension } from "@/lib/gpt";
 import { RolePlayConfig } from "@/types/roleplay";
 
 // Web Speech API type declarations
@@ -44,6 +44,7 @@ interface CoachingEvent {
   flavor: CoachingFlavor;
   text: string;
   originalText?: string;
+  dimension?: CoachingDimension;
 }
 
 const scenarioStarters: Record<string, { title: string; partnerName: string }> = {
@@ -258,6 +259,7 @@ const Conversation = () => {
             flavor: coachingFlavorMap[result.coaching!.type] ?? "suggestion",
             text: result.coaching!.text,
             originalText: result.coaching!.original,
+            dimension: result.coaching!.dimension,
           },
         ]);
       }
@@ -409,6 +411,7 @@ const Conversation = () => {
                     flavor={c.flavor}
                     text={c.text}
                     originalText={c.originalText}
+                    dimension={c.dimension}
                     onDismiss={() => setCoachingHistory((prev) => prev.filter((x) => x.id !== c.id))}
                   />
                 </div>

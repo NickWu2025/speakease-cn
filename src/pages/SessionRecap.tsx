@@ -1,8 +1,91 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Sparkles, MessageSquare, Lightbulb, RotateCcw, Loader2 } from "lucide-react";
-import { analyzeSession, RecapAnalysis } from "@/lib/gpt";
+import { ArrowLeft, Sparkles, Lightbulb, RotateCcw, Loader2, TrendingUp, CheckCircle2 } from "lucide-react";
+import { analyzeSession, RecapAnalysis, CoachingDimension, DimensionFeedback } from "@/lib/gpt";
 
+// ── Dimension config ──────────────────────────────────────────────────
+const DIMENSION_CONFIG: Record<
+  CoachingDimension,
+  { label: string; emoji: string; desc: string; accentCls: string; bgCls: string; borderCls: string }
+> = {
+  content: {
+    label: "Content",
+    emoji: "💬",
+    desc: "Clarity of meaning & natural expression",
+    accentCls: "text-blue-600",
+    bgCls: "bg-blue-50",
+    borderCls: "border-blue-100",
+  },
+  structure: {
+    label: "Structure",
+    emoji: "🧱",
+    desc: "Logical flow & completeness",
+    accentCls: "text-amber-600",
+    bgCls: "bg-amber-50",
+    borderCls: "border-amber-100",
+  },
+  delivery: {
+    label: "Delivery",
+    emoji: "🎙️",
+    desc: "Tone, confidence & engagement",
+    accentCls: "text-violet-600",
+    bgCls: "bg-violet-50",
+    borderCls: "border-violet-100",
+  },
+};
+
+const RATING_CONFIG: Record<
+  DimensionFeedback["rating"],
+  { label: string; cls: string }
+> = {
+  strong:       { label: "Strong",     cls: "bg-green-100 text-green-700 border-green-200" },
+  developing:   { label: "Developing", cls: "bg-amber-100 text-amber-700 border-amber-200" },
+  "needs-work": { label: "Focus here", cls: "bg-blue-100 text-blue-700 border-blue-200" },
+};
+
+function DimensionCard({
+  dim,
+  feedback,
+}: {
+  dim: CoachingDimension;
+  feedback: DimensionFeedback;
+}) {
+  const cfg = DIMENSION_CONFIG[dim];
+  const rating = RATING_CONFIG[feedback.rating];
+  return (
+    <div className={`rounded-2xl border ${cfg.borderCls} ${cfg.bgCls} p-4 shadow-soft`}>
+      {/* Header */}
+      <div className="flex items-center gap-2.5 mb-3">
+        <span className="text-xl">{cfg.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <p className={`text-[14px] font-heading font-bold ${cfg.accentCls}`}>{cfg.label}</p>
+          <p className="text-[11px] text-muted-foreground">{cfg.desc}</p>
+        </div>
+        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${rating.cls}`}>
+          {rating.label}
+        </span>
+      </div>
+
+      {/* Observations */}
+      <div className="space-y-1.5 mb-3">
+        {feedback.observations.map((obs, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <CheckCircle2 className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${cfg.accentCls} opacity-70`} />
+            <p className="text-[13px] text-foreground leading-snug">{obs}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Tip */}
+      <div className={`flex items-start gap-2 pt-3 border-t ${cfg.borderCls}`}>
+        <TrendingUp className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${cfg.accentCls}`} />
+        <p className={`text-[12px] font-medium ${cfg.accentCls} leading-snug`}>{feedback.tip}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────
 const SessionRecap = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -30,15 +113,8 @@ const SessionRecap = () => {
       return;
     }
     analyzeSession(messages, scenarioTitle)
-      .then((result) => {
-        setAnalysis(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Recap analysis error:", err);
-        setError(true);
-        setLoading(false);
-      });
+      .then((result) => { setAnalysis(result); setLoading(false); })
+      .catch((err) => { console.error("Recap error:", err); setError(true); setLoading(false); });
   }, []);
 
   return (
@@ -49,7 +125,7 @@ const SessionRecap = () => {
           onClick={() => navigate("/")}
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
-          <ArrowLeft className="w-4.5 h-4.5" />
+          <ArrowLeft className="w-[18px] h-[18px]" />
           <span className="text-[13px] font-medium">Home</span>
         </button>
 
@@ -59,7 +135,7 @@ const SessionRecap = () => {
           </div>
           <div>
             <h1 className="text-[1.35rem] font-heading font-bold text-foreground leading-tight">
-              Nice work! 🎉
+              Session recap 🎉
             </h1>
             <p className="text-[13px] text-muted-foreground mt-0.5">
               {scenarioTitle} · {formatTime(duration)}
@@ -80,50 +156,56 @@ const SessionRecap = () => {
           </div>
         ) : (
           <>
-            {/* What you practiced */}
-            <div className="stagger-2 rounded-2xl surface-elevated p-5 border border-border/50">
-              <div className="flex items-center gap-2 mb-3">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                <h2 className="text-[13px] font-heading font-bold text-foreground uppercase tracking-wider">What You Practiced</h2>
-              </div>
-              <ul className="space-y-2">
-                {(analysis?.practiced ?? []).map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-[13px] text-muted-foreground">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-1.5 shrink-0" />
-                    {item}
-                  </li>
+            {/* ── 3 Dimension cards ── */}
+            {analysis?.dimensions && (
+              <div className="stagger-2 space-y-3">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Coaching breakdown
+                </p>
+                {(["content", "structure", "delivery"] as CoachingDimension[]).map((dim) => (
+                  <DimensionCard key={dim} dim={dim} feedback={analysis.dimensions[dim]} />
                 ))}
-              </ul>
-            </div>
+              </div>
+            )}
 
-            {/* Coaching Moments */}
+            {/* ── Coaching moments ── */}
             {(analysis?.moments?.length ?? 0) > 0 && (
               <div className="stagger-3 rounded-2xl surface-elevated p-5 border border-border/50">
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-4 h-4 text-accent" />
-                  <h2 className="text-[13px] font-heading font-bold text-foreground uppercase tracking-wider">AI Coaching Moments</h2>
+                  <h2 className="text-[13px] font-heading font-bold text-foreground uppercase tracking-wider">
+                    Moments to refine
+                  </h2>
                 </div>
                 <div className="space-y-4">
-                  {analysis!.moments.map((moment, idx) => (
-                    <div key={idx} className="space-y-1.5">
-                      <p className="text-[13px] text-muted-foreground/50 line-through decoration-muted-foreground/20">
-                        "{moment.original}"
-                      </p>
-                      <p className="text-[13px] font-medium text-foreground">
-                        ✨ "{moment.improved}"
-                      </p>
-                      <p className="text-[11px] text-coaching font-medium">{moment.reason}</p>
-                    </div>
-                  ))}
+                  {analysis!.moments.map((moment, idx) => {
+                    const dimCfg = moment.dimension ? DIMENSION_CONFIG[moment.dimension] : null;
+                    return (
+                      <div key={idx} className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          {dimCfg && (
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${dimCfg.bgCls} ${dimCfg.accentCls} ${dimCfg.borderCls}`}>
+                              {dimCfg.emoji} {dimCfg.label}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[13px] text-muted-foreground/50 line-through decoration-muted-foreground/20">
+                          "{moment.original}"
+                        </p>
+                        <p className="text-[13px] font-medium text-foreground">✨ "{moment.improved}"</p>
+                        <p className="text-[11px] text-coaching font-medium">{moment.reason}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Reusable Phrases */}
+            {/* ── Phrases to reuse ── */}
             {(analysis?.phrases?.length ?? 0) > 0 && (
               <div className="stagger-4 rounded-2xl bg-primary/5 p-5 border border-primary/10">
                 <h2 className="text-[13px] font-heading font-bold text-foreground uppercase tracking-wider mb-3">
-                  Phrases to Reuse 💬
+                  Phrases to reuse 💬
                 </h2>
                 <div className="space-y-2">
                   {analysis!.phrases.map((phrase, idx) => (
@@ -135,14 +217,12 @@ const SessionRecap = () => {
               </div>
             )}
 
-            {/* Encouragement + CTA */}
+            {/* ── Encouragement + CTA ── */}
             <div className="stagger-5 text-center py-8">
               <p className="text-[17px] font-heading font-bold text-foreground mb-1">
                 {analysis?.encouragement ?? "You're getting more natural every session"}
               </p>
-              <p className="text-[13px] text-muted-foreground">
-                Confidence comes with practice 💪
-              </p>
+              <p className="text-[13px] text-muted-foreground">Confidence comes with practice 💪</p>
               <button
                 onClick={() => navigate("/")}
                 className="mt-6 gradient-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95 inline-flex items-center gap-2"

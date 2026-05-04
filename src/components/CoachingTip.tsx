@@ -1,13 +1,21 @@
 import { Lightbulb, Sparkles, MessageCircle, Smile, AlertCircle, X, ArrowRight } from "lucide-react";
+import { CoachingDimension } from "@/lib/gpt";
 
 export type CoachingLayer = "subtle" | "rewrite" | "interrupt";
 export type CoachingFlavor = "suggestion" | "rewrite" | "nudge" | "humor" | "interrupt";
+
+const DIMENSION_BADGE: Record<CoachingDimension, { emoji: string; label: string; cls: string }> = {
+  content:  { emoji: "💬", label: "Content",  cls: "bg-blue-50 text-blue-600 border-blue-100" },
+  structure:{ emoji: "🧱", label: "Structure", cls: "bg-amber-50 text-amber-600 border-amber-100" },
+  delivery: { emoji: "🎙️", label: "Delivery",  cls: "bg-violet-50 text-violet-600 border-violet-100" },
+};
 
 interface CoachingTipProps {
   layer: CoachingLayer;
   flavor: CoachingFlavor;
   text: string;
   originalText?: string;
+  dimension?: CoachingDimension;
   onDismiss: () => void;
   onApply?: () => void;
 }
@@ -62,9 +70,10 @@ const flavorConfig: Record<CoachingFlavor, {
   },
 };
 
-const CoachingTip = ({ layer, flavor, text, originalText, onDismiss, onApply }: CoachingTipProps) => {
+const CoachingTip = ({ layer, flavor, text, originalText, dimension, onDismiss, onApply }: CoachingTipProps) => {
   const config = flavorConfig[flavor];
   const Icon = config.icon;
+  const dimBadge = dimension ? DIMENSION_BADGE[dimension] : null;
 
   if (layer === "subtle") {
     return (
@@ -74,6 +83,11 @@ const CoachingTip = ({ layer, flavor, text, originalText, onDismiss, onApply }: 
             <Icon className={`w-3 h-3 ${config.colorClass}`} />
           </div>
           <p className="text-[13px] text-foreground flex-1 leading-snug">{text}</p>
+          {dimBadge && (
+            <span className={`shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${dimBadge.cls}`}>
+              {dimBadge.emoji} {dimBadge.label}
+            </span>
+          )}
           <button onClick={onDismiss} className="text-muted-foreground/30 hover:text-muted-foreground transition-colors shrink-0 p-0.5">
             <X className="w-3 h-3" />
           </button>
@@ -94,6 +108,11 @@ const CoachingTip = ({ layer, flavor, text, originalText, onDismiss, onApply }: 
               <Icon className={`w-3 h-3 ${config.colorClass}`} />
             </div>
             <span className={`text-[10px] font-bold ${config.colorClass} uppercase tracking-widest`}>{config.label}</span>
+            {dimBadge && (
+              <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${dimBadge.cls}`}>
+                {dimBadge.emoji} {dimBadge.label}
+              </span>
+            )}
           </div>
           {originalText && (
             <p className="text-[13px] text-muted-foreground/60 line-through decoration-muted-foreground/20 mb-1.5 pl-0.5">
@@ -128,6 +147,11 @@ const CoachingTip = ({ layer, flavor, text, originalText, onDismiss, onApply }: 
             <Icon className={`w-3.5 h-3.5 ${config.colorClass}`} />
           </div>
           <span className={`text-[10px] font-bold ${config.colorClass} uppercase tracking-widest`}>{config.label}</span>
+          {dimBadge && (
+            <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${dimBadge.cls}`}>
+              {dimBadge.emoji} {dimBadge.label}
+            </span>
+          )}
         </div>
         <p className="text-[13px] font-medium text-foreground leading-relaxed pl-0.5">{text}</p>
         {onApply && (
