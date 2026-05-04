@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { RolePlayConfig, PERSONALITY_DESC, CULTURE_DESC } from "@/types/roleplay";
 
 const client = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? "",
@@ -32,21 +33,121 @@ const SCENARIO_DESCRIPTIONS: Record<string, string> = {
   party: "two guests meeting at a casual house party",
   networking: "two professionals meeting at a networking event",
   improv: "two people having a fun, open-ended improv conversation",
+  interview: "a job interview between a candidate and an interviewer",
+  presentation: "a professional presentation with an audience",
+  group_discussion: "a structured group discussion with multiple participants",
 };
 
-export async function generateOpener(scenarioId: string, partnerName: string): Promise<string> {
+function buildRolePlayContext(rolePlay: RolePlayConfig): string {
+  const personalityLine = PERSONALITY_DESC[rolePlay.personality] ?? rolePlay.personality;
+  const cultureLine = CULTURE_DESC[rolePlay.culturalBackground] ?? rolePlay.culturalBackground;
+  const topicLine = rolePlay.topic ? `\nContext/topic: ${rolePlay.topic}` : "";
+  return `Your personality: Be ${personalityLine}.\nCultural context: ${cultureLine}.${topicLine}`;
+}
+
+function buildInterviewPrompt(partnerName: string, rolePlay: RolePlayConfig): string {
+  const ctx = buildRolePlayContext(rolePlay);
+  return `You are ${partnerName}, a ${rolePlay.counterpartRole} conducting a job interview${rolePlay.topic ? ` for a ${rolePlay.topic} position` : ""}.
+${ctx}
+
+Your job:
+1. Ask ONE focused interview question at a time — vary between behavioral ("Tell me about a time…"), situational ("How would you handle…"), and competency-based
+2. React authentically to the answer — acknowledge strong points, probe vague or incomplete answers
+3. Keep the interview realistic and appropriately challenging
+
+After the user's response, continue the interview naturally. Provide coaching ONLY when it would genuinely improve their interview technique.
+
+Respond ONLY with a JSON object:
+{
+  "reply": "<your interviewer response + next question>",
+  "coaching": null
+}
+OR with a coaching tip when relevant:
+{
+  "reply": "<your interviewer response>",
+  "coaching": {
+    "type": "subtle" | "rewrite" | "interrupt",
+    "text": "<tip focused on interview skills: STAR structure, specificity, confidence>",
+    "original": "<user's phrase if rewriting>",
+    "improved": "<stronger version>"
+  }
+}`;
+}
+
+function buildPresentationPrompt(partnerName: string, rolePlay: RolePlayConfig): string {
+  const ctx = buildRolePlayContext(rolePlay);
+  return `You are ${partnerName}, an audience member${rolePlay.topic ? ` at a presentation about ${rolePlay.topic}` : ""}.
+${ctx}
+
+Your role:
+1. On the FIRST turn: warmly invite the user to begin — "Welcome! Please go ahead and start your presentation whenever you're ready."
+2. After each part of their presentation: react authentically — note interesting points, ask clarifying questions, or gently challenge weak claims
+3. Keep the audience dynamic: sometimes enthusiastic, sometimes skeptical (based on your personality)
+4. Coaching should focus on: clarity, logical structure, audience engagement, confidence signals
+
+Respond ONLY with a JSON object:
+{
+  "reply": "<your audience reaction + follow-up question or prompt>",
+  "coaching": null
+}
+OR:
+{
+  "reply": "<your reaction>",
+  "coaching": {
+    "type": "subtle" | "rewrite" | "interrupt",
+    "text": "<presentation coaching tip>",
+    "original": "<user's phrase if rewriting>",
+    "improved": "<clearer version>"
+  }
+}`;
+}
+
+function buildGroupDiscussionPrompt(partnerName: string, rolePlay: RolePlayConfig): string {
+  const ctx = buildRolePlayContext(rolePlay);
+  return `You are ${partnerName}, a moderator/participant in a group discussion${rolePlay.topic ? ` on: ${rolePlay.topic}` : ""}.
+${ctx}
+
+Simulate a realistic group setting by occasionally referencing other participants' reactions (e.g., "Sam brings up a good counterpoint here…" or "A few people in the group are nodding, but Jordan seems skeptical…").
+
+Your role:
+1. First turn: introduce the discussion topic and invite the user to share their perspective
+2. React to their contributions — agree, challenge, or build on their ideas with different group viewpoints
+3. Keep the discussion dynamic and intellectually engaging
+4. Coaching should focus on: making points clearly, backing up opinions, and participating assertively in group settings
+
+Respond ONLY with a JSON object:
+{
+  "reply": "<your moderator/group response>",
+  "coaching": null
+}
+OR:
+{
+  "reply": "<your response>",
+  "coaching": {
+    "type": "subtle" | "rewrite" | "interrupt",
+    "text": "<group discussion coaching tip>",
+    "original": "<user's phrase if applicable>",
+    "improved": "<stronger version>"
+  }
+}`;
+}
+
+export async function generateOpener(
+  scenarioId: string,
+  partnerName: string,
+  rolePlay?: RolePlayConfig
+): Promise<string> {
+  const roleCtx = rolePlay ? `\n${buildRolePlayContext(rolePlay)}` : "";
+
   const openerContexts: Record<string, string> = {
-    classmate: `You are ${partnerName}, a friendly university student who just sat down near someone in a lecture hall before class starts. Start a natural, casual conversation. Vary your opener — you might comment on the class, ask about notes, the professor, campus life, major, weekend plans, etc.`,
-    party: `You are ${partnerName}, a guest at a casual house party who just walked up to someone standing nearby. Start a natural, friendly conversation. Vary your opener — you might comment on the music, drinks, how you know the host, the vibe, or just introduce yourself in a fun way.`,
-    networking: `You are ${partnerName}, a professional at a networking event who just approached someone. Start a natural, professional-but-warm conversation. Vary your opener — you might ask what brings them here, their industry, their company, a recent trend, the event itself, etc.`,
+    classmate: `You are ${partnerName}, a friendly university student who just sat down near someone in a lecture hall before class starts. Start a natural, casual conversation. Vary your opener — you might comment on the class, ask about notes, the professor, campus life, major, weekend plans, etc.${roleCtx}`,
+    party: `You are ${partnerName}, a guest at a casual house party who just walked up to someone standing nearby. Start a natural, friendly conversation. Vary your opener — you might comment on the music, drinks, how you know the host, the vibe, or just introduce yourself in a fun way.${roleCtx}`,
+    networking: `You are ${partnerName}, a professional at a networking event who just approached someone. Start a natural, professional-but-warm conversation. Vary your opener — you might ask what brings them here, their industry, their company, a recent trend, the event itself, etc.${roleCtx}`,
     improv: `You are ${partnerName}, starting a fun, spontaneous conversation. Vary every time — throw out an interesting question, a fun hypothetical, a random topic, a "would you rather", or an unexpected observation. Be creative and unpredictable.`,
-    humor: `You are ${partnerName}, a comedy coach. Generate a fresh, varied humor prompt for the learner to respond to. Examples of prompt types (rotate randomly):
-- A quirky everyday situation to react to with wit (e.g. "The office printer just printed a resignation letter addressed to itself.")
-- A fill-in-the-blank joke setup (e.g. "I tried to write a joke about time travel, but...")
-- A "how would you explain X to Y" challenge (e.g. "Explain WiFi to a medieval knight — make it funny.")
-- A playful roast target (e.g. "Roast the concept of Mondays in one sentence.")
-- A weird hypothetical (e.g. "If your pet wrote a Yelp review of you, what would it say?")
-Keep it light, specific, and immediately actionable. End with an invitation like "Give it a try!" or "What's your take?"`,
+    humor: `You are ${partnerName}, a comedy coach. Generate a fresh, varied humor prompt for the learner to respond to. Keep it light, specific, and immediately actionable. End with "Give it a try!" or "What's your take?"`,
+    interview: `You are ${partnerName}, a ${rolePlay?.counterpartRole ?? "interviewer"} about to start a job interview${rolePlay?.topic ? ` for a ${rolePlay.topic} position` : ""}. ${roleCtx}\nOpen the interview professionally: greet the candidate, briefly introduce yourself, and ask your first interview question.`,
+    presentation: `You are ${partnerName}, an audience member${rolePlay?.topic ? ` at a presentation on ${rolePlay.topic}` : ""}. ${roleCtx}\nWelcome the presenter warmly and invite them to begin.`,
+    group_discussion: `You are ${partnerName}, moderating a group discussion${rolePlay?.topic ? ` on: ${rolePlay.topic}` : ""}. ${roleCtx}\nOpen the session: introduce the topic briefly and invite the user to share their initial perspective.`,
   };
 
   const context = openerContexts[scenarioId] ?? openerContexts.improv;
@@ -73,14 +174,16 @@ export async function getConversationReply(
   history: GPTMessage[],
   scenarioId: string,
   partnerName: string,
-  mode?: string
+  mode?: string,
+  rolePlay?: RolePlayConfig
 ): Promise<ConversationTurnResult> {
   const scenarioDesc = SCENARIO_DESCRIPTIONS[scenarioId] ?? "two people having a casual conversation";
-
   const isHumor = mode === "humor" || scenarioId === "humor";
 
-  const systemPrompt = isHumor
-    ? `You are ${partnerName}, a warm and encouraging comedy coach helping someone practice humor and wit in English.
+  let systemPrompt: string;
+
+  if (isHumor) {
+    systemPrompt = `You are ${partnerName}, a warm and encouraging comedy coach helping someone practice humor and wit in English.
 
 The user just responded to a humor prompt. Your job:
 1. Give a short, genuine reaction to their response — was it funny? clever? unexpected? (1 sentence, be specific)
@@ -91,45 +194,44 @@ Always keep the energy fun and supportive — never harsh.
 
 Respond ONLY with a JSON object:
 {
-  "reply": "<your reaction to their response + the new humor prompt>",
+  "reply": "<your reaction + the new humor prompt>",
   "coaching": {
     "type": "rewrite" | "subtle",
-    "text": "<one concrete tip: how they could make it funnier, or what technique to try next time>",
-    "original": "<the user's exact response if suggesting an improvement>",
-    "improved": "<a funnier version of their response, if applicable — otherwise omit this field>"
+    "text": "<one concrete tip>",
+    "original": "<user's exact response if suggesting improvement>",
+    "improved": "<funnier version if applicable>"
   }
 }
+If their response was genuinely funny and nothing needs improving, set coaching to null.`;
+  } else if (scenarioId === "interview" && rolePlay) {
+    systemPrompt = buildInterviewPrompt(partnerName, rolePlay);
+  } else if (scenarioId === "presentation" && rolePlay) {
+    systemPrompt = buildPresentationPrompt(partnerName, rolePlay);
+  } else if (scenarioId === "group_discussion" && rolePlay) {
+    systemPrompt = buildGroupDiscussionPrompt(partnerName, rolePlay);
+  } else {
+    const roleCtx = rolePlay ? `\n${buildRolePlayContext(rolePlay)}` : "";
+    systemPrompt = `You are ${partnerName}, playing the role of a friendly person in a scenario: ${scenarioDesc}.${roleCtx}
 
-If their response was genuinely funny and nothing needs improving, set coaching to null.`
-    : `You are ${partnerName}, playing the role of a friendly person in a scenario: ${scenarioDesc}.
+Your job is to have a natural, engaging conversation. Keep your reply to 1-3 sentences. Ask a follow-up question when appropriate.
 
-Your job is to have a natural, engaging conversation. Keep your reply to 1-3 sentences. Ask a follow-up question when appropriate to keep the conversation flowing.
-
-After reading what the user just said, also optionally provide a real-time coaching tip to help them improve their conversational English.
-
-Respond ONLY with a JSON object in this exact format:
+Respond ONLY with a JSON object:
 {
   "reply": "<your conversational response as ${partnerName}>",
   "coaching": null
 }
-
 OR if you have a useful coaching tip:
 {
   "reply": "<your conversational response>",
   "coaching": {
     "type": "subtle" | "rewrite" | "interrupt",
-    "text": "<coaching tip text>",
-    "original": "<the user's phrase to improve, if rewriting>",
-    "improved": "<the improved version of their phrase, if rewriting>"
+    "text": "<coaching tip>",
+    "original": "<user's phrase if rewriting>",
+    "improved": "<improved version>"
   }
 }
-
-Coaching types:
-- "subtle": a small nudge or suggestion (e.g. ask a follow-up, show more interest)
-- "rewrite": suggest a more natural/expressive way to say what they said
-- "interrupt": flag something important mid-conversation (e.g. they were too vague, awkward phrasing)
-
-Only include coaching when it would genuinely help. Leave coaching as null if what they said was good.`;
+Only include coaching when it would genuinely help. Leave coaching null if what they said was good.`;
+  }
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",

@@ -8,6 +8,7 @@ import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Onboarding from "./pages/Onboarding";
 import ScenarioSelect from "./pages/ScenarioSelect";
+import RolePlaySetup from "./pages/RolePlaySetup";
 import Conversation from "./pages/Conversation";
 import SessionRecap from "./pages/SessionRecap";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,7 @@ function AppRoutes() {
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
       <Route path="/scenarios" element={<RequireAuth><ScenarioSelect /></RequireAuth>} />
+      <Route path="/roleplay-setup" element={<RequireAuth><RolePlaySetup /></RequireAuth>} />
       <Route path="/conversation" element={<RequireAuth><Conversation /></RequireAuth>} />
       <Route path="/recap" element={<RequireAuth><SessionRecap /></RequireAuth>} />
       <Route path="*" element={<NotFound />} />

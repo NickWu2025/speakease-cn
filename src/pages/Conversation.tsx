@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { ArrowLeft, Mic, MicOff, Square, Video, VideoOff } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 import CoachingTip, { CoachingLayer, CoachingFlavor } from "@/components/CoachingTip";
 import ChatBubble from "@/components/ChatBubble";
 import VoiceWave from "@/components/VoiceWave";
 import { getConversationReply, generateOpener, speakText, GPTMessage } from "@/lib/gpt";
+import { RolePlayConfig } from "@/types/roleplay";
 
 // Web Speech API type declarations
 interface ISpeechRecognition extends EventTarget {
@@ -46,19 +47,30 @@ interface CoachingEvent {
 }
 
 const scenarioStarters: Record<string, { title: string; partnerName: string }> = {
-  classmate: { title: "Meeting a Classmate", partnerName: "Alex" },
-  party:     { title: "Party Conversation",  partnerName: "Jordan" },
-  networking:{ title: "Networking Event",    partnerName: "Sam" },
-  improv:    { title: "Improv Mode",         partnerName: "Alex" },
-  humor:     { title: "Humor Practice",      partnerName: "Jamie" },
+  classmate:        { title: "Meeting a Classmate",   partnerName: "Alex" },
+  party:            { title: "Party Conversation",    partnerName: "Jordan" },
+  networking:       { title: "Networking Event",      partnerName: "Sam" },
+  improv:           { title: "Improv Mode",           partnerName: "Alex" },
+  humor:            { title: "Humor Practice",        partnerName: "Jamie" },
+  interview:        { title: "Job Interview",         partnerName: "Morgan" },
+  presentation:     { title: "Presentation Practice", partnerName: "Alex" },
+  group_discussion: { title: "Group Discussion",      partnerName: "Jordan" },
 };
 
 const Conversation = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const rolePlay = (location.state as { rolePlay?: RolePlayConfig } | null)?.rolePlay;
+
   const mode = searchParams.get("mode") || "improv";
   const scenarioId = searchParams.get("scenario") || "improv";
-  const scenario = scenarioStarters[scenarioId] || scenarioStarters.improv;
+
+  // RolePlay config can override partnerName
+  const baseScenario = scenarioStarters[scenarioId] || scenarioStarters.improv;
+  const scenario = rolePlay
+    ? { title: rolePlay.scenarioTitle || baseScenario.title, partnerName: rolePlay.partnerName || baseScenario.partnerName }
+    : baseScenario;
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -154,7 +166,7 @@ const Conversation = () => {
     timerRef.current = setInterval(() => setSessionDuration((d) => d + 1), 1000);
     // Generate a fresh random opener each session
     setStatus("thinking");
-    generateOpener(scenarioId, scenario.partnerName).then((opener) => {
+    generateOpener(scenarioId, scenario.partnerName, rolePlay).then((opener) => {
       gptHistoryRef.current = [{ role: "assistant", content: opener }];
       setMessages([{ id: 1, role: "ai", text: opener }]);
       setStatus("idle");
@@ -209,7 +221,8 @@ const Conversation = () => {
         gptHistoryRef.current,
         scenarioId,
         scenario.partnerName,
-        mode
+        mode,
+        rolePlay
       );
 
       // Add AI reply to GPT history
@@ -363,7 +376,11 @@ const Conversation = () => {
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-heading font-semibold text-foreground">{scenario.partnerName}</p>
           <p className="text-[11px] text-muted-foreground">
-            {mode === "humor" ? "AI humor coach" : "AI conversation partner"}
+            {mode === "humor"
+              ? "AI humor coach"
+              : rolePlay
+              ? `${rolePlay.counterpartRole} · ${rolePlay.personality}`
+              : "AI conversation partner"}
           </p>
         </div>
         <div className="flex items-center gap-1.5 bg-coaching-soft px-2.5 py-1 rounded-full shadow-glow-coaching">
