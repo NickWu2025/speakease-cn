@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Mic, MicOff, Square } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Square, Video, VideoOff } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 import CoachingTip, { CoachingLayer, CoachingFlavor } from "@/components/CoachingTip";
 import ChatBubble from "@/components/ChatBubble";
 import VoiceWave from "@/components/VoiceWave";
-import { getConversationReply, GPTMessage } from "@/lib/gpt";
+import { getConversationReply, generateOpener, speakText, GPTMessage } from "@/lib/gpt";
 
 // Web Speech API type declarations
 interface ISpeechRecognition extends EventTarget {
@@ -45,27 +45,12 @@ interface CoachingEvent {
   originalText?: string;
 }
 
-const scenarioStarters: Record<string, { title: string; partnerName: string; aiOpener: string }> = {
-  classmate: {
-    title: "Meeting a Classmate",
-    partnerName: "Alex",
-    aiOpener: "Hey! I think we're in the same lecture. I'm Alex — are you also majoring in CS?",
-  },
-  party: {
-    title: "Party Conversation",
-    partnerName: "Jordan",
-    aiOpener: "Hi there! Great party, right? I don't think we've met — I'm Jordan. How do you know the host?",
-  },
-  networking: {
-    title: "Networking Event",
-    partnerName: "Sam",
-    aiOpener: "Hi! I'm Sam, I work in product design. What brings you to this event?",
-  },
-  improv: {
-    title: "Improv Mode",
-    partnerName: "Alex",
-    aiOpener: "Okay, here's a random topic — if you could live in any city for a year, where would you go and why?",
-  },
+const scenarioStarters: Record<string, { title: string; partnerName: string }> = {
+  classmate: { title: "Meeting a Classmate", partnerName: "Alex" },
+  party:     { title: "Party Conversation",  partnerName: "Jordan" },
+  networking:{ title: "Networking Event",    partnerName: "Sam" },
+  improv:    { title: "Improv Mode",         partnerName: "Alex" },
+  humor:     { title: "Humor Practice",      partnerName: "Jamie" },
 };
 
 const Conversation = () => {
@@ -75,34 +60,122 @@ const Conversation = () => {
   const scenarioId = searchParams.get("scenario") || "improv";
   const scenario = scenarioStarters[scenarioId] || scenarioStarters.improv;
 
-  const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: "ai", text: scenario.aiOpener },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isListening, setIsListening] = useState(false);
-  const [currentCoaching, setCurrentCoaching] = useState<CoachingEvent | null>(null);
+  const [coachingHistory, setCoachingHistory] = useState<(CoachingEvent & { id: number; afterMessageId: number })[]>([]);
   const [status, setStatus] = useState<"idle" | "listening" | "thinking">("idle");
   const [sessionDuration, setSessionDuration] = useState(0);
   const [transcript, setTranscript] = useState("");
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported] = useState(
     () => typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
   );
+  const [isCameraOn, setIsCameraOn] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
-  // GPT conversation history (excludes the initial AI opener for cleanliness)
-  const gptHistoryRef = useRef<GPTMessage[]>([
-    { role: "assistant", content: scenario.aiOpener },
-  ]);
+  const gptHistoryRef = useRef<GPTMessage[]>([]);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const ttsAbortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setIsCameraOn(true);
+
+      // Start recording
+      recordedChunksRef.current = [];
+      const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+      recorder.start(1000);
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Camera access denied:", err);
+      alert("无法访问摄像头，请检查浏览器权限设置。");
+    }
+  };
+
+  const stopCamera = () => {
+    mediaRecorderRef.current?.stop();
+    mediaRecorderRef.current = null;
+    cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+    cameraStreamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setIsCameraOn(false);
+    setIsRecording(false);
+  };
+
+  const toggleCamera = () => {
+    if (isCameraOn) {
+      stopCamera();
+    } else {
+      startCamera();
+    }
+  };
+
+  const saveRecording = () => {
+    if (recordedChunksRef.current.length === 0) return;
+    const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `speakflow-${scenario.title.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.webm`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const speakAIReply = async (text: string) => {
+    ttsAbortRef.current?.abort();
+    const controller = new AbortController();
+    ttsAbortRef.current = controller;
+    setIsSpeaking(true);
+    try {
+      await speakText(text, controller.signal);
+    } catch {
+      // TTS failure is non-fatal — conversation continues silently
+    } finally {
+      setIsSpeaking(false);
+    }
+  };
 
   useEffect(() => {
     timerRef.current = setInterval(() => setSessionDuration((d) => d + 1), 1000);
-    return () => clearInterval(timerRef.current);
+    // Generate a fresh random opener each session
+    setStatus("thinking");
+    generateOpener(scenarioId, scenario.partnerName).then((opener) => {
+      gptHistoryRef.current = [{ role: "assistant", content: opener }];
+      setMessages([{ id: 1, role: "ai", text: opener }]);
+      setStatus("idle");
+      speakAIReply(opener);
+    }).catch(() => {
+      const fallback = `Hi! I'm ${scenario.partnerName}. Nice to meet you!`;
+      gptHistoryRef.current = [{ role: "assistant", content: fallback }];
+      setMessages([{ id: 1, role: "ai", text: fallback }]);
+      setStatus("idle");
+    });
+    return () => {
+      clearInterval(timerRef.current);
+      ttsAbortRef.current?.abort();
+      mediaRecorderRef.current?.stop();
+      cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+    };
   }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, currentCoaching]);
+  }, [messages, coachingHistory]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -114,15 +187,16 @@ const Conversation = () => {
     }
 
     const trimmed = userText.trim();
-
-    setMessages((prev) => [
-      ...prev,
-      { id: prev.length + 1, role: "user", text: trimmed },
-    ]);
     setTranscript("");
     setStatus("thinking");
     setIsListening(false);
-    setCurrentCoaching(null);
+
+    // Add user message and capture its id for coaching association
+    let userMsgId = 0;
+    setMessages((prev) => {
+      userMsgId = prev.length + 1;
+      return [...prev, { id: userMsgId, role: "user", text: trimmed }];
+    });
 
     // Add user message to GPT history
     gptHistoryRef.current = [
@@ -134,7 +208,8 @@ const Conversation = () => {
       const result = await getConversationReply(
         gptHistoryRef.current,
         scenarioId,
-        scenario.partnerName
+        scenario.partnerName,
+        mode
       );
 
       // Add AI reply to GPT history
@@ -148,6 +223,8 @@ const Conversation = () => {
         { id: prev.length + 1, role: "ai", text: result.reply },
       ]);
 
+      speakAIReply(result.reply);
+
       if (result.coaching) {
         const coachingLayerMap: Record<string, CoachingLayer> = {
           subtle: "subtle",
@@ -159,13 +236,17 @@ const Conversation = () => {
           rewrite: "rewrite",
           interrupt: "interrupt",
         };
-        setCurrentCoaching({
-          layer: coachingLayerMap[result.coaching.type] ?? "subtle",
-          flavor: coachingFlavorMap[result.coaching.type] ?? "suggestion",
-          text: result.coaching.text,
-          originalText: result.coaching.original,
-        });
-        setTimeout(() => setCurrentCoaching(null), 8000);
+        setCoachingHistory((prev) => [
+          ...prev,
+          {
+            id: Date.now(),
+            afterMessageId: userMsgId,
+            layer: coachingLayerMap[result.coaching!.type] ?? "subtle",
+            flavor: coachingFlavorMap[result.coaching!.type] ?? "suggestion",
+            text: result.coaching!.text,
+            originalText: result.coaching!.original,
+          },
+        ]);
       }
     } catch (err) {
       console.error("GPT error:", err);
@@ -226,12 +307,16 @@ const Conversation = () => {
     setIsListening(true);
     setStatus("listening");
     setTranscript("");
-    setCurrentCoaching(null);
   };
 
   const endSession = () => {
     recognitionRef.current?.stop();
     clearInterval(timerRef.current);
+    if (isCameraOn) {
+      // Stop recorder, wait for final chunks, then save
+      mediaRecorderRef.current?.addEventListener("stop", saveRecording);
+      stopCamera();
+    }
     navigate("/recap", {
       state: {
         scenario: scenario.title,
@@ -244,7 +329,7 @@ const Conversation = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto">
+    <div className="min-h-screen bg-background flex flex-col max-w-lg mx-auto relative">
       {/* Header */}
       <div className="pt-12 pb-2.5 px-5 flex items-center justify-between glass sticky top-0 z-10 border-b border-border/40">
         <button onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground transition-colors p-1.5 -ml-1.5 rounded-lg hover:bg-muted/50">
@@ -253,9 +338,9 @@ const Conversation = () => {
         <div className="text-center flex-1">
           <p className="text-[14px] font-heading font-semibold text-foreground leading-tight">{scenario.title}</p>
           <div className="flex items-center justify-center gap-1.5 mt-0.5">
-            <div className={`w-1.5 h-1.5 rounded-full transition-colors ${status === "listening" ? "bg-primary animate-pulse" : status === "thinking" ? "bg-accent animate-pulse" : "bg-muted-foreground/30"}`} />
+            <div className={`w-1.5 h-1.5 rounded-full transition-colors ${status === "listening" ? "bg-primary animate-pulse" : status === "thinking" ? "bg-accent animate-pulse" : isSpeaking ? "bg-success animate-pulse" : "bg-muted-foreground/30"}`} />
             <p className="text-[11px] text-muted-foreground font-medium">
-              {status === "listening" ? "Listening…" : status === "thinking" ? `${scenario.partnerName} is thinking…` : "Your turn"}
+              {status === "listening" ? "Listening…" : status === "thinking" ? `${scenario.partnerName} is thinking…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Your turn"}
             </p>
             <span className="text-[11px] text-muted-foreground/40">·</span>
             <span className="text-[11px] text-muted-foreground/40 tabular-nums font-medium">{formatTime(sessionDuration)}</span>
@@ -277,39 +362,64 @@ const Conversation = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-heading font-semibold text-foreground">{scenario.partnerName}</p>
-          <p className="text-[11px] text-muted-foreground">AI conversation partner</p>
+          <p className="text-[11px] text-muted-foreground">
+            {mode === "humor" ? "AI humor coach" : "AI conversation partner"}
+          </p>
         </div>
         <div className="flex items-center gap-1.5 bg-coaching-soft px-2.5 py-1 rounded-full shadow-glow-coaching">
           <div className="w-1.5 h-1.5 rounded-full bg-coaching animate-pulse" />
-          <span className="text-[10px] font-semibold text-coaching uppercase tracking-wider">Coach on</span>
+          <span className="text-[10px] font-semibold text-coaching uppercase tracking-wider">
+            {mode === "humor" ? "😄 Humor" : "Coach on"}
+          </span>
         </div>
       </div>
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
         {messages.map((msg, idx) => (
-          <ChatBubble
-            key={msg.id}
-            role={msg.role}
-            text={msg.text}
-            isLatest={idx === messages.length - 1}
-          />
-        ))}
-
-        {currentCoaching && (
-          <div className="pl-10">
-            <CoachingTip
-              layer={currentCoaching.layer}
-              flavor={currentCoaching.flavor}
-              text={currentCoaching.text}
-              originalText={currentCoaching.originalText}
-              onDismiss={() => setCurrentCoaching(null)}
+          <div key={msg.id}>
+            <ChatBubble
+              role={msg.role}
+              text={msg.text}
+              isLatest={idx === messages.length - 1}
             />
+            {coachingHistory
+              .filter((c) => c.afterMessageId === msg.id)
+              .map((c) => (
+                <div key={c.id} className="pl-10 mt-2">
+                  <CoachingTip
+                    layer={c.layer}
+                    flavor={c.flavor}
+                    text={c.text}
+                    originalText={c.originalText}
+                    onDismiss={() => setCoachingHistory((prev) => prev.filter((x) => x.id !== c.id))}
+                  />
+                </div>
+              ))}
           </div>
-        )}
+        ))}
 
         <div ref={chatEndRef} />
       </div>
+
+      {/* Floating Camera Window */}
+      {isCameraOn && (
+        <div className="absolute top-[120px] right-4 z-20 rounded-xl overflow-hidden shadow-lg border border-border/40 bg-black" style={{ width: 140, height: 105 }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            className="w-full h-full object-cover scale-x-[-1]"
+          />
+          {isRecording && (
+            <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-black/60 px-1.5 py-0.5 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-[9px] text-white font-semibold">REC</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Voice Controls */}
       <div className="pb-8 pt-3 px-5 glass border-t border-border/30">
@@ -335,7 +445,7 @@ const Conversation = () => {
 
           <button
             onClick={toggleListening}
-            disabled={status === "thinking"}
+            disabled={status === "thinking" || isSpeaking}
             className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
               isListening
                 ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
@@ -346,11 +456,21 @@ const Conversation = () => {
             {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
           </button>
 
-          <div className="w-11 h-11" />
+          <button
+            onClick={toggleCamera}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+              isCameraOn
+                ? "bg-red-500/15 text-red-500 hover:bg-red-500/25"
+                : "bg-muted/60 text-muted-foreground hover:bg-muted"
+            }`}
+            aria-label={isCameraOn ? "关闭摄像头" : "开启摄像头"}
+          >
+            {isCameraOn ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+          </button>
         </div>
 
         <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
-          {isListening ? "Tap when done speaking" : status === "thinking" ? `Waiting for ${scenario.partnerName}…` : "Tap the mic to respond"}
+          {isListening ? "Tap when done speaking" : status === "thinking" ? `Waiting for ${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Tap the mic to respond"}
         </p>
       </div>
     </div>

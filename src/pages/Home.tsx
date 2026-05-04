@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Zap, Flame, ChevronRight } from "lucide-react";
+import { MessageCircle, Zap, Flame, ChevronRight, Laugh } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 
 const Home = () => {
@@ -73,8 +73,29 @@ const Home = () => {
           </div>
         </button>
 
+        <button
+          onClick={() => navigate("/conversation?mode=humor&scenario=humor")}
+          className="stagger-3 group w-full rounded-2xl bg-card p-5 text-left shadow-soft hover:shadow-lg transition-all active:scale-[0.98] relative overflow-hidden border border-border/50"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-[hsl(45_80%_97%)] to-[hsl(25_70%_95%)]" />
+          <div className="relative flex items-center gap-4">
+            <div className="w-11 h-11 rounded-xl bg-[hsl(38_90%_88%)] flex items-center justify-center shrink-0">
+              <Laugh className="w-5 h-5 text-[hsl(30_80%_45%)]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-[17px] font-heading font-semibold text-foreground">
+                Humor Practice
+              </h2>
+              <p className="text-muted-foreground text-[13px] mt-0.5">
+                Random prompts — be witty, get instant feedback
+              </p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-[hsl(30_80%_45%)] group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </button>
+
         {/* Streak */}
-        <div className="stagger-3 mt-4 rounded-2xl surface-elevated p-4 flex items-center gap-4 border border-border/50">
+        <div className="stagger-4 mt-4 rounded-2xl surface-elevated p-4 flex items-center gap-4 border border-border/50">
           <div className="w-11 h-11 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
             <Flame className="w-5 h-5 text-accent" />
           </div>
@@ -89,7 +110,7 @@ const Home = () => {
         </div>
 
         {/* Recent Sessions */}
-        <div className="stagger-4 rounded-2xl surface-elevated p-4 border border-border/50">
+        <div className="stagger-5 rounded-2xl surface-elevated p-4 border border-border/50">
           <p className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Recent</p>
           <div className="space-y-2.5">
             {[

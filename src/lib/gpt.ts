@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 
 const client = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? "",
   dangerouslyAllowBrowser: true, // demo only — move to backend for production
 });
 
@@ -34,14 +34,74 @@ const SCENARIO_DESCRIPTIONS: Record<string, string> = {
   improv: "two people having a fun, open-ended improv conversation",
 };
 
+export async function generateOpener(scenarioId: string, partnerName: string): Promise<string> {
+  const openerContexts: Record<string, string> = {
+    classmate: `You are ${partnerName}, a friendly university student who just sat down near someone in a lecture hall before class starts. Start a natural, casual conversation. Vary your opener — you might comment on the class, ask about notes, the professor, campus life, major, weekend plans, etc.`,
+    party: `You are ${partnerName}, a guest at a casual house party who just walked up to someone standing nearby. Start a natural, friendly conversation. Vary your opener — you might comment on the music, drinks, how you know the host, the vibe, or just introduce yourself in a fun way.`,
+    networking: `You are ${partnerName}, a professional at a networking event who just approached someone. Start a natural, professional-but-warm conversation. Vary your opener — you might ask what brings them here, their industry, their company, a recent trend, the event itself, etc.`,
+    improv: `You are ${partnerName}, starting a fun, spontaneous conversation. Vary every time — throw out an interesting question, a fun hypothetical, a random topic, a "would you rather", or an unexpected observation. Be creative and unpredictable.`,
+    humor: `You are ${partnerName}, a comedy coach. Generate a fresh, varied humor prompt for the learner to respond to. Examples of prompt types (rotate randomly):
+- A quirky everyday situation to react to with wit (e.g. "The office printer just printed a resignation letter addressed to itself.")
+- A fill-in-the-blank joke setup (e.g. "I tried to write a joke about time travel, but...")
+- A "how would you explain X to Y" challenge (e.g. "Explain WiFi to a medieval knight — make it funny.")
+- A playful roast target (e.g. "Roast the concept of Mondays in one sentence.")
+- A weird hypothetical (e.g. "If your pet wrote a Yelp review of you, what would it say?")
+Keep it light, specific, and immediately actionable. End with an invitation like "Give it a try!" or "What's your take?"`,
+  };
+
+  const context = openerContexts[scenarioId] ?? openerContexts.improv;
+
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: `${context}\n\nRespond ONLY with a JSON object: { "opener": "<your opening line>" }\nKeep it to 1-3 sentences. Sound natural and human. Do NOT start with "Hey!" every time — vary greetings.`,
+      },
+      { role: "user", content: "Generate a fresh, varied opening line." },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 1.1,
+  });
+
+  const raw = response.choices[0].message.content ?? '{"opener": "Hey! Great to meet you."}';
+  const parsed = JSON.parse(raw) as { opener: string };
+  return parsed.opener;
+}
+
 export async function getConversationReply(
   history: GPTMessage[],
   scenarioId: string,
-  partnerName: string
+  partnerName: string,
+  mode?: string
 ): Promise<ConversationTurnResult> {
   const scenarioDesc = SCENARIO_DESCRIPTIONS[scenarioId] ?? "two people having a casual conversation";
 
-  const systemPrompt = `You are ${partnerName}, playing the role of a friendly person in a scenario: ${scenarioDesc}.
+  const isHumor = mode === "humor" || scenarioId === "humor";
+
+  const systemPrompt = isHumor
+    ? `You are ${partnerName}, a warm and encouraging comedy coach helping someone practice humor and wit in English.
+
+The user just responded to a humor prompt. Your job:
+1. Give a short, genuine reaction to their response — was it funny? clever? unexpected? (1 sentence, be specific)
+2. Explain briefly what humor technique they used or missed (e.g. subverted expectations, callback, timing, wordplay)
+3. Then introduce a FRESH new humor prompt for them to try
+
+Always keep the energy fun and supportive — never harsh.
+
+Respond ONLY with a JSON object:
+{
+  "reply": "<your reaction to their response + the new humor prompt>",
+  "coaching": {
+    "type": "rewrite" | "subtle",
+    "text": "<one concrete tip: how they could make it funnier, or what technique to try next time>",
+    "original": "<the user's exact response if suggesting an improvement>",
+    "improved": "<a funnier version of their response, if applicable — otherwise omit this field>"
+  }
+}
+
+If their response was genuinely funny and nothing needs improving, set coaching to null.`
+    : `You are ${partnerName}, playing the role of a friendly person in a scenario: ${scenarioDesc}.
 
 Your job is to have a natural, engaging conversation. Keep your reply to 1-3 sentences. Ask a follow-up question when appropriate to keep the conversation flowing.
 
@@ -127,4 +187,31 @@ Rules:
 
   const raw = response.choices[0].message.content ?? "{}";
   return JSON.parse(raw) as RecapAnalysis;
+}
+
+export async function speakText(text: string, signal?: AbortSignal): Promise<void> {
+  const response = await client.audio.speech.create({
+    model: "tts-1",
+    voice: "nova",
+    input: text,
+  });
+  if (signal?.aborted) return;
+  const arrayBuffer = await response.arrayBuffer();
+  if (signal?.aborted) return;
+  const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  return new Promise((resolve) => {
+    const cleanup = () => {
+      URL.revokeObjectURL(url);
+      resolve();
+    };
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    signal?.addEventListener("abort", () => {
+      audio.pause();
+      cleanup();
+    });
+    audio.play().catch(cleanup);
+  });
 }
