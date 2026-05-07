@@ -83,7 +83,7 @@ Your job:
 2. React authentically to the answer — acknowledge strong points, probe vague or incomplete answers
 3. Keep the interview realistic and appropriately challenging
 
-After the user's response, continue the interview naturally. Provide coaching ONLY when it would genuinely improve their interview technique.
+After the user's response, continue the interview naturally. Provide a coaching tip on most turns (~70%) — even strong answers benefit from positive reinforcement plus one concrete enhancement. Only return coaching: null for truly exceptional, nothing-to-add responses.
 ${COACHING_SCHEMA}
 
 Respond ONLY with a JSON object:
@@ -196,7 +196,7 @@ ${COACHING_SCHEMA}
 Respond ONLY with a JSON object:
 { "reply": "<your reaction + the new humor prompt>", "coaching": null }
 OR: { "reply": "<your reaction>", "coaching": { ...coachingShape } }
-If their response was genuinely funny and nothing needs improving, set coaching to null.`;
+Include a coaching tip on most turns (~70%) — even funny responses can get reinforcement plus one technique tweak. Only return coaching: null when the response was truly excellent with nothing to add.`;
   } else if (scenarioId === "interview" && rolePlay) {
     systemPrompt = buildInterviewPrompt(partnerName, rolePlay);
   } else if (scenarioId === "presentation" && rolePlay) {
@@ -214,7 +214,7 @@ Respond ONLY with a JSON object:
 { "reply": "<your conversational response as ${partnerName}>", "coaching": null }
 OR if you have a useful tip:
 { "reply": "<your response>", "coaching": { ...coachingShape } }
-Only include coaching when it would genuinely help. Leave coaching null if what they said was good.`;
+Include a coaching tip on most turns (~70%) — even good responses benefit from specific positive reinforcement plus one concrete enhancement. Only return coaching: null when the response was truly exceptional with nothing to add.`;
   }
 
   const response = await client.chat.completions.create({

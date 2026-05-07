@@ -87,6 +87,8 @@ const Conversation = () => {
   const [isRecording, setIsRecording] = useState(false);
 
   const gptHistoryRef = useRef<GPTMessage[]>([]);
+  const msgIdRef = useRef(0);
+  const nextMsgId = () => { msgIdRef.current += 1; return msgIdRef.current; };
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -204,12 +206,9 @@ const Conversation = () => {
     setStatus("thinking");
     setIsListening(false);
 
-    // Add user message and capture its id for coaching association
-    let userMsgId = 0;
-    setMessages((prev) => {
-      userMsgId = prev.length + 1;
-      return [...prev, { id: userMsgId, role: "user", text: trimmed }];
-    });
+    // Capture a stable id before the state update so coaching can reference it reliably
+    const userMsgId = nextMsgId();
+    setMessages((prev) => [...prev, { id: userMsgId, role: "user", text: trimmed }]);
 
     // Add user message to GPT history
     gptHistoryRef.current = [
