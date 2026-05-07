@@ -243,11 +243,13 @@ const Conversation = () => {
           subtle: "subtle",
           rewrite: "rewrite",
           interrupt: "interrupt",
+          prompt: "prompt",
         };
         const coachingFlavorMap: Record<string, CoachingFlavor> = {
           subtle: "nudge",
           rewrite: "rewrite",
           interrupt: "interrupt",
+          prompt: "prompt",
         };
         setCoachingHistory((prev) => [
           ...prev,

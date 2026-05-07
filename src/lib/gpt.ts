@@ -16,7 +16,7 @@ export type CoachingDimension = "content" | "structure" | "delivery";
 export interface ConversationTurnResult {
   reply: string;
   coaching: {
-    type: "subtle" | "rewrite" | "interrupt";
+    type: "subtle" | "rewrite" | "interrupt" | "prompt";
     dimension: CoachingDimension;
     text: string;
     improved?: string;
@@ -55,12 +55,17 @@ const SCENARIO_DESCRIPTIONS: Record<string, string> = {
 const COACHING_SCHEMA = `
 When including a coaching tip, use this exact shape and ALWAYS set "dimension":
 {
-  "type": "subtle" | "rewrite" | "interrupt",
+  "type": "subtle" | "rewrite" | "interrupt" | "prompt",
   "dimension": "content" | "structure" | "delivery",
-  "text": "<tip — focus on understandability and natural expression, NOT grammar>",
+  "text": "<tip or guiding question>",
   "original": "<user's exact phrase, only when type is 'rewrite'>",
   "improved": "<more natural version, only when type is 'rewrite'>"
 }
+Type guide (pick the ONE that best fits):
+- "subtle"    → a small inline tip about phrasing, word choice, or expression
+- "rewrite"   → suggest a specific better phrasing (requires original + improved fields)
+- "interrupt" → an important correction the user needs right now
+- "prompt"    → a short guiding question (ending with "?") that opens up a better thinking direction — use this when the answer isn't wrong but could be richer, more specific, or approached from a better angle. E.g. "What's a concrete example you could share here?" or "How does this connect to what they just asked?"
 Dimension guide (pick the ONE that best fits):
 - "content"  → clarity of meaning, word choice, natural expression
 - "structure" → logical flow, sequencing, completeness of the response

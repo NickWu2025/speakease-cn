@@ -1,8 +1,8 @@
-import { Lightbulb, Sparkles, MessageCircle, Smile, AlertCircle, X, ArrowRight } from "lucide-react";
+import { Lightbulb, Sparkles, MessageCircle, Smile, AlertCircle, X, ArrowRight, HelpCircle } from "lucide-react";
 import { CoachingDimension } from "@/lib/gpt";
 
-export type CoachingLayer = "subtle" | "rewrite" | "interrupt";
-export type CoachingFlavor = "suggestion" | "rewrite" | "nudge" | "humor" | "interrupt";
+export type CoachingLayer = "subtle" | "rewrite" | "interrupt" | "prompt";
+export type CoachingFlavor = "suggestion" | "rewrite" | "nudge" | "humor" | "interrupt" | "prompt";
 
 const DIMENSION_BADGE: Record<CoachingDimension, { emoji: string; label: string; cls: string }> = {
   content:  { emoji: "💬", label: "Content",  cls: "bg-blue-50 text-blue-600 border-blue-100" },
@@ -68,6 +68,14 @@ const flavorConfig: Record<CoachingFlavor, {
     borderClass: "border-[hsl(var(--coaching-interrupt)/0.2)]",
     iconBgClass: "bg-[hsl(var(--coaching-interrupt)/0.1)]",
   },
+  prompt: {
+    icon: HelpCircle,
+    label: "Think about this",
+    colorClass: "text-emerald-600",
+    bgClass: "bg-emerald-50",
+    borderClass: "border-emerald-100",
+    iconBgClass: "bg-emerald-100",
+  },
 };
 
 const CoachingTip = ({ layer, flavor, text, originalText, dimension, onDismiss, onApply }: CoachingTipProps) => {
@@ -131,6 +139,30 @@ const CoachingTip = ({ layer, flavor, text, originalText, dimension, onDismiss, 
               Use this phrase ✨
             </button>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (layer === "prompt") {
+    return (
+      <div className="animate-coaching-enter">
+        <div className={`${config.bgClass} border ${config.borderClass} rounded-2xl p-3.5 relative shadow-sm`}>
+          <button onClick={onDismiss} className="absolute top-3 right-3 text-muted-foreground/30 hover:text-muted-foreground transition-colors p-0.5">
+            <X className="w-3 h-3" />
+          </button>
+          <div className="flex items-center gap-2 mb-2">
+            <div className={`w-5 h-5 rounded-lg ${config.iconBgClass} flex items-center justify-center`}>
+              <Icon className={`w-3 h-3 ${config.colorClass}`} />
+            </div>
+            <span className={`text-[10px] font-bold ${config.colorClass} uppercase tracking-widest`}>{config.label}</span>
+            {dimBadge && (
+              <span className={`ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${dimBadge.cls}`}>
+                {dimBadge.emoji} {dimBadge.label}
+              </span>
+            )}
+          </div>
+          <p className={`text-[13px] font-medium ${config.colorClass} leading-relaxed pl-0.5 italic`}>{text}</p>
         </div>
       </div>
     );
