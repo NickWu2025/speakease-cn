@@ -20,28 +20,28 @@ export interface UserProfile {
 }
 
 export const GOALS: { id: GoalId; emoji: string; label: string; desc: string }[] = [
-  { id: "social", emoji: "🎉", label: "Social & Small Talk", desc: "Connect naturally at parties and with new people" },
-  { id: "interview", emoji: "💼", label: "Job Interviews", desc: "Ace interviews and professional conversations" },
-  { id: "presentation", emoji: "🎤", label: "Public Speaking", desc: "Present confidently in classes and meetings" },
+  { id: "social", emoji: "🎤", label: "演讲展示", desc: "在会议和公开场合自信表达" },
+  { id: "interview", emoji: "💼", label: "面试模拟", desc: "结构化回答，用故事展示能力" },
+  { id: "presentation", emoji: "🚀", label: "创业路演", desc: "向投资人和客户讲好你的故事" },
 ];
 
 export const CHALLENGES: { id: ChallengeId; label: string }[] = [
-  { id: "freeze", label: "I freeze and can't think of what to say" },
-  { id: "vocabulary", label: "My vocabulary feels limited" },
-  { id: "grammar", label: "I worry about making grammar mistakes" },
-  { id: "flow", label: "I struggle to keep conversations going" },
-  { id: "nervous", label: "I feel nervous speaking English" },
-  { id: "natural", label: "I can't express myself naturally" },
+  { id: "freeze", label: "我说话容易紧张，大脑空白" },
+  { id: "vocabulary", label: "我讲故事没有重点，容易跑题" },
+  { id: "grammar", label: "我不知道怎么组织语言，逻辑混乱" },
+  { id: "flow", label: "我的表达缺乏感染力，听众没兴趣" },
+  { id: "nervous", label: "我不擅长即兴发言" },
+  { id: "natural", label: "我不知道如何用故事打动别人" },
 ];
 
 export const PROFICIENCY_META: Record<ProficiencyLevel, { label: string; colorClass: string; desc: string }> = {
-  beginner: { label: "Building Confidence", colorClass: "text-accent bg-accent/10 border-accent/30", desc: "Focused on comfort and basics" },
-  intermediate: { label: "Growing Strong", colorClass: "text-coaching bg-coaching-soft border-coaching/30", desc: "Ready to tackle real scenarios" },
-  advanced: { label: "Polishing Fluency", colorClass: "text-primary bg-primary/10 border-primary/30", desc: "Fine-tuning natural expression" },
+  beginner: { label: "初学者", colorClass: "text-accent bg-accent/10 border-accent/30", desc: "正在建立表达自信" },
+  intermediate: { label: "成长中", colorClass: "text-coaching bg-coaching-soft border-coaching/30", desc: "适合开始实战练习" },
+  advanced: { label: "精进中", colorClass: "text-primary bg-primary/10 border-primary/30", desc: "打磨自然流畅的表达" },
 };
 
 export const SCENARIO_FOR_GOAL: Record<GoalId, string> = {
-  social: "party",
-  interview: "networking",
-  presentation: "networking",
+  social: "elevator_pitch",
+  interview: "interview",
+  presentation: "product_pitch",
 };

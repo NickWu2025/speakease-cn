@@ -8,17 +8,16 @@ import { loadSessions } from "@/lib/sessionStore";
 import ProgressWidget from "@/components/ProgressWidget";
 
 const SCENARIO_CONFIG = {
-  classmate: { label: "Meeting a Classmate", emoji: "👋", path: "/conversation?scenario=classmate" },
-  party:     { label: "Party Conversation",  emoji: "🎉", path: "/conversation?scenario=party" },
-  networking:{ label: "Networking Event",    emoji: "🤝", path: "/conversation?scenario=networking" },
-  improv:    { label: "Improv Mode",         emoji: "⚡", path: "/conversation?mode=improv" },
+  elevator_pitch: { label: "电梯演讲", emoji: "🚀", path: "/conversation?scenario=elevator_pitch" },
+  product_pitch:   { label: "产品路演", emoji: "💼", path: "/conversation?scenario=product_pitch" },
+  interview:       { label: "面试模拟", emoji: "📋", path: "/conversation?scenario=interview" },
 };
 
 const Home = () => {
   const navigate = useNavigate();
   const { user, profile, signOut } = useAuth();
 
-  const firstName = user?.name?.split(" ")[0] ?? "there";
+  const firstName = user?.name?.split(" ")[0] ?? "朋友";
   const levelMeta = profile ? PROFICIENCY_META[profile.proficiencyLevel] : null;
   const primaryGoalLabel = profile?.goals[0] ? GOALS.find((g) => g.id === profile.goals[0])?.label : null;
   const storyCount = user ? loadStories(user.id).length : 0;
@@ -39,11 +38,11 @@ const Home = () => {
             {user?.avatarUrl ? (
               <img src={user.avatarUrl} alt={user.name} width={44} height={44} className="relative rounded-full shadow-glow-primary ring-2 ring-background" />
             ) : (
-              <img src={aiAvatar} alt="SpeakFlow" width={44} height={44} className="relative rounded-full shadow-glow-primary ring-2 ring-background" />
+              <img src={aiAvatar} alt="易言 SpeakEase" width={44} height={44} className="relative rounded-full shadow-glow-primary ring-2 ring-background" />
             )}
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground font-medium">Welcome back</p>
+            <p className="text-[11px] text-muted-foreground font-medium">欢迎回来</p>
             <h1 className="text-[17px] font-heading font-bold text-foreground leading-tight">{firstName} 👋</h1>
           </div>
         </div>
@@ -59,7 +58,7 @@ const Home = () => {
             {profile.proficiencyLevel === "beginner" ? "🌱" : profile.proficiencyLevel === "intermediate" ? "🔥" : "⚡"} {levelMeta.label}
           </div>
           {primaryGoalLabel && (
-            <p className="text-[12px] text-muted-foreground flex-1 truncate">Goal: {primaryGoalLabel}</p>
+            <p className="text-[12px] text-muted-foreground flex-1 truncate">目标：{primaryGoalLabel}</p>
           )}
           <button onClick={() => navigate("/onboarding")} className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors">
             <User className="w-3.5 h-3.5" />
@@ -70,7 +69,7 @@ const Home = () => {
       {/* Recommended (if profile has recommendations) */}
       {profile?.recommendedScenarios?.length > 0 && (
         <div className="px-5 mb-2">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recommended for you</p>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">为你推荐</p>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             {profile.recommendedScenarios.slice(0, 3).map((scenId) => {
               const cfg = SCENARIO_CONFIG[scenId as keyof typeof SCENARIO_CONFIG];
@@ -102,10 +101,10 @@ const Home = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[17px] font-heading font-semibold text-primary-foreground">
-                Conversation Practice
+                场景练习
               </h2>
               <p className="text-primary-foreground/75 text-[13px] mt-0.5">
-                Social, interview, presentation & more
+                电梯演讲、产品路演、面试模拟等
               </p>
             </div>
             <ChevronRight className="w-5 h-5 text-primary-foreground/50 group-hover:translate-x-0.5 transition-transform" />
@@ -124,7 +123,7 @@ const Home = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h2 className="text-[17px] font-heading font-semibold text-foreground">
-                  Story Library
+                  故事工坊
                 </h2>
                 {storyCount > 0 && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[hsl(230_70%_88%)] text-[hsl(230_55%_45%)] border border-[hsl(230_60%_80%)]">
@@ -133,7 +132,7 @@ const Home = () => {
                 )}
               </div>
               <p className="text-muted-foreground text-[13px] mt-0.5">
-                Refine your stories, debate with AI
+                打磨你的故事，和 AI 教练对话
               </p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-[hsl(230_55%_45%)] group-hover:translate-x-0.5 transition-all" />
@@ -151,10 +150,10 @@ const Home = () => {
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="text-[17px] font-heading font-semibold text-foreground">
-                Warm-up Game
+                热身练习
               </h2>
               <p className="text-muted-foreground text-[13px] mt-0.5">
-                Exercises, humor, eye contact & filler trainer
+                绕口令、即兴幽默、眼神训练、口头禅检测
               </p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground/30 group-hover:text-[hsl(152_55%_32%)] group-hover:translate-x-0.5 transition-all" />

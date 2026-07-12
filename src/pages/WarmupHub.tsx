@@ -4,8 +4,8 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 const FEATURES = [
   {
     id: "exercises",
-    title: "Warm-up Exercises",
-    desc: "Tongue twisters, breathing & vocal warm-ups",
+    title: "热身练习",
+    desc: "绕口令、呼吸和发声热身",
     emoji: "🎯",
     path: "/warmup/exercises",
     bgCls: "bg-blue-50",
@@ -15,8 +15,8 @@ const FEATURES = [
   },
   {
     id: "humor",
-    title: "Humor Prompts",
-    desc: "Get a random prompt — be witty, get instant feedback",
+    title: "即兴幽默",
+    desc: "获取随机提示 — 展现机智，获得即时反馈",
     emoji: "😄",
     path: "/conversation?mode=humor&scenario=humor",
     bgCls: "bg-amber-50",
@@ -26,8 +26,8 @@ const FEATURES = [
   },
   {
     id: "eye-contact",
-    title: "Eye Contact Training",
-    desc: "Guided drills to build confident eye contact",
+    title: "眼神训练",
+    desc: "引导练习，建立自信的眼神交流",
     emoji: "👁️",
     path: "/warmup/eye-contact",
     bgCls: "bg-violet-50",
@@ -37,14 +37,14 @@ const FEATURES = [
   },
   {
     id: "filler",
-    title: "Filler Word Trainer",
-    desc: "Catch 'um', 'like', 'you know' in real time",
+    title: "口头禅检测",
+    desc: '实时检测"嗯""那个""就是说"等口头禅',
     emoji: "🚫",
     path: "/warmup/filler",
     bgCls: "bg-rose-50",
     borderCls: "border-rose-100",
     accentCls: "text-rose-600",
-    tag: "Live",
+    tag: "实时",
   },
 ];
 
@@ -59,7 +59,7 @@ const WarmupHub = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Home</span>
+          <span className="text-[13px] font-medium">首页</span>
         </button>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-sm">
@@ -67,10 +67,10 @@ const WarmupHub = () => {
           </div>
           <div>
             <h1 className="text-[1.35rem] font-heading font-bold text-foreground leading-tight">
-              Warm-up Game
+              热身练习
             </h1>
             <p className="text-[13px] text-muted-foreground mt-0.5">
-              Lower the barrier to speaking
+              降低开口表达的门槛
             </p>
           </div>
         </div>
@@ -78,7 +78,7 @@ const WarmupHub = () => {
 
       <div className="px-5 flex-1 flex flex-col gap-3 max-w-md mx-auto w-full">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-          Pick an exercise
+          选择一个练习
         </p>
         {FEATURES.map((f, i) => (
           <button

@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { Story, StoryTone, StoryStructure, StoryMessage } from "@/types/story";
+import { Story, StoryTone, StoryMessage } from "@/types/story";
 import { SessionRecord, RATING_SCORE } from "@/lib/sessionStore";
 
 const client = new OpenAI({
@@ -21,7 +21,7 @@ export async function extractStories(
   scenarioId?: string
 ): Promise<Story[]> {
   const transcript = messages
-    .map((m) => `${m.role === "user" ? "User" : "AI"}: ${m.text}`)
+    .map((m) => `${m.role === "user" ? "用户" : "AI"}：${m.text}`)
     .join("\n");
 
   const response = await client.chat.completions.create({
@@ -29,23 +29,23 @@ export async function extractStories(
     messages: [
       {
         role: "system",
-        content: `You are SpeakFlow analyzing a conversation transcript to extract personal stories.
+        content: `你是易言 SpeakEase，正在分析对话记录以提取个人故事。
 
-A "story" = any first-person experience: "when I...", "last year I...", "at my job...", "one time...", etc.
+"故事" = 任何第一人称经历："当时我…"、"去年我…"、"在我工作的时候…"、"有一次…"等。
 
-For each distinct story found (max 3), extract:
-- title: 4–8 word descriptive title
-- raw: the user's own words about the experience (combine related messages if needed)
-- summary: 1–2 sentence third-person summary
-- tags: 1–3 from [career, challenge, achievement, learning, teamwork, leadership, personal, networking]
-- structure: { situation, challenge, action, result, insight } — infer from context if not explicit
+为每个发现的不同故事（最多 3 个）提取：
+- title: 4-8 个字的描述性标题
+- raw: 用户关于这段经历的原话（必要时合并相关消息）
+- summary: 1-2 句第三人称摘要
+- tags: 1-3 个来自 [career, challenge, achievement, learning, teamwork, leadership, personal, networking]
+- structure: { situation, challenge, action, result, insight } — 上下文推断
 
-Return ONLY valid JSON (no markdown fences):
+仅返回有效 JSON（不要 markdown 标记）：
 { "stories": [ { "title": "...", "raw": "...", "summary": "...", "tags": [...], "structure": { "situation": "...", "challenge": "...", "action": "...", "result": "...", "insight": "..." } } ] }
 
-If no clear personal stories exist, return { "stories": [] }.`,
+如果没有明显的个人故事，返回 { "stories": [] }。`,
       },
-      { role: "user", content: `Transcript from "${scenarioTitle}":\n\n${transcript}` },
+      { role: "user", content: `来自"${scenarioTitle}"的对话记录：\n\n${transcript}` },
     ],
     response_format: { type: "json_object" },
     temperature: 0.6,
@@ -72,13 +72,13 @@ If no clear personal stories exist, return { "stories": [] }.`,
 
 const TONE_INSTRUCTIONS: Record<StoryTone, string> = {
   casual:
-    "conversational and friendly — as you'd tell a close friend over coffee. Use natural language, contractions, and a warm tone.",
+    "口语化、友好 — 像跟好朋友喝咖啡时聊天。用自然的语言、轻松的语气。",
   interview:
-    "professional and structured using the STAR method (Situation, Action, Result). Be concise, impact-focused, and use strong action verbs. Aim for 60–90 seconds when spoken.",
+    "专业、结构化，使用 STAR 方法（情境、行动、结果）。简洁、突出影响、用有力的行动动词。口语表达约 60-90 秒。",
   storytelling:
-    "vivid and engaging with a clear narrative arc: hook the listener, build tension, deliver a satisfying conclusion. Use sensory details and specific moments.",
+    "生动、有感染力，有清晰的叙事弧线：吸引听众、制造张力、给出有启发的结尾。使用感官细节和具体时刻。",
   short:
-    "extremely concise — 2–3 sentences maximum. Capture the essence and key insight in the fewest possible words.",
+    "极度简洁 — 最多 2-3 句话。用最少的词抓住本质和关键洞察。",
 };
 
 export async function refineStory(raw: string, title: string, tone: StoryTone): Promise<string> {
@@ -87,13 +87,13 @@ export async function refineStory(raw: string, title: string, tone: StoryTone): 
     messages: [
       {
         role: "system",
-        content: `You are a communication coach rewriting a personal story.
+        content: `你是一位沟通教练，正在重写一个个人故事。
 
-Tone: "${tone}" — ${TONE_INSTRUCTIONS[tone]}
+语调："${tone}" — ${TONE_INSTRUCTIONS[tone]}
 
-Return ONLY the rewritten story text. No intro, no explanation, no markdown.`,
+仅返回重写后的故事文本。不要开头、不要解释、不要 markdown。`,
       },
-      { role: "user", content: `Story: "${title}"\n\n${raw}` },
+      { role: "user", content: `故事："${title}"\n\n${raw}` },
     ],
     temperature: 0.8,
   });
@@ -106,23 +106,23 @@ export async function chatAboutStory(
   thread: StoryMessage[],
   userMessage: string
 ): Promise<string> {
-  const systemPrompt = `You are SpeakFlow, a communication coach helping someone improve their personal story titled "${story.title}".
+  const systemPrompt = `你是易言 SpeakEase 的沟通教练，帮助用户改进标题为"${story.title}"的个人故事。
 
-Story summary: ${story.summary}
+故事摘要：${story.summary}
 
-Original story:
+原始故事：
 """
 ${story.raw}
 """
 
-Your role:
-1. Ask specific follow-up questions to deepen clarity, substance, and insight
-2. Suggest concrete improvements to structure, language, or impact
-3. Help them discover what makes this story compelling and unique
-4. Advise how to adapt it for different contexts (interview, networking, casual conversation)
+你的角色：
+1. 提出具体的跟进问题来深化清晰度、实质和洞察
+2. 建议结构、语言或表现力的具体改进
+3. 帮助他们发现这个故事什么让它有吸引力和独特
+4. 建议如何在不同场景中调整（面试、路演、日常交流）
 
-Be specific, warm, and practical. Always reference actual details from their story.
-If opening the conversation, ask ONE focused question to get them thinking.`;
+要具体、温暖、实用。始终引用他们故事中的实际细节。
+如果是开场，问一个聚焦的问题来引发思考。`;
 
   const isOpener = thread.length === 0 && !userMessage;
   const history = thread.map((m) => ({
@@ -137,13 +137,13 @@ If opening the conversation, ask ONE focused question to get them thinking.`;
     messages: [
       { role: "system", content: systemPrompt },
       ...(isOpener
-        ? [{ role: "user" as const, content: "Please open our coaching conversation with a question about my story." }]
+        ? [{ role: "user" as const, content: "请用一个关于我故事的问题开始我们的教练对话。" }]
         : history),
     ],
     temperature: 0.85,
   });
 
-  return response.choices[0].message.content?.trim() ?? "Tell me more about your story.";
+  return response.choices[0].message.content?.trim() ?? "多告诉我一些关于你故事的情况。";
 }
 
 // ── Progress report ───────────────────────────────────────────────────
@@ -167,7 +167,7 @@ export async function generateProgressReport(
 
   const recentLines = sessions.slice(0, 8).map(
     (s) =>
-      `- ${s.scenarioTitle}: content=${s.dimensions.content}, structure=${s.dimensions.structure}, delivery=${s.dimensions.delivery}`
+      `- ${s.scenarioTitle}: 内容=${s.dimensions.content}, 结构=${s.dimensions.structure}, 表达=${s.dimensions.delivery}`
   ).join("\n");
 
   const response = await client.chat.completions.create({
@@ -175,23 +175,23 @@ export async function generateProgressReport(
     messages: [
       {
         role: "system",
-        content: `You are SpeakFlow generating a personalized progress report for an English conversation learner.
+        content: `你是易言 SpeakEase，正在为一位演讲沟通学习者生成个性化进步报告。
 
-User data:
-- Total sessions: ${sessions.length}
-- Content avg: ${avg("content")}/3
-- Structure avg: ${avg("structure")}/3
-- Delivery avg: ${avg("delivery")}/3
-- Stories saved: ${storyCount}
+用户数据：
+- 总练习次数：${sessions.length}
+- 内容平均分：${avg("content")}/3
+- 结构平均分：${avg("structure")}/3
+- 表达平均分：${avg("delivery")}/3
+- 已保存故事：${storyCount}
 
-Recent sessions:
+最近练习：
 ${recentLines}
 
-Return ONLY valid JSON (no markdown):
+仅返回有效 JSON（不要 markdown）：
 {
-  "headline": "<one warm, specific encouraging sentence about overall progress>",
-  "improvements": ["<specific improvement 1 based on actual data>", "<specific improvement 2>"],
-  "focusAreas": ["<specific actionable focus area 1>", "<specific focus area 2>"],
+  "headline": "<一句温暖、具体的关于整体进步的鼓励>",
+  "improvements": ["<基于实际数据的具体进步 1>", "<具体进步 2>"],
+  "focusAreas": ["<具体可操作的聚焦方向 1>", "<具体聚焦方向 2>"],
   "readiness": {
     "social": "Ready" | "Almost there" | "Keep practicing",
     "interview": "Ready" | "Almost there" | "Keep practicing",

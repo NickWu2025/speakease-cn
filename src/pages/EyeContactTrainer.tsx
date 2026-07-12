@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, CameraOff, CheckCircle2 } from "lucide-react";
 
 const PROMPTS = [
-  "Tell me about your favourite weekend activity in 3 sentences.",
-  "What's something interesting you learned recently? Explain it briefly.",
-  "Describe your perfect morning routine.",
-  "If you could visit anywhere in the world, where would you go and why?",
-  "What's one skill you'd like to improve this year and how?",
+  "用 3 句话介绍你最喜欢的周末活动。",
+  "最近学到了什么有趣的东西？简单说一说。",
+  "描述你理想的早晨日常。",
+  "如果能去世界上任何地方，你会去哪里？为什么？",
+  "今年最想提升的一个技能是什么？打算怎么做？",
 ];
 
 const ROUND_DURATION = 20;
@@ -95,12 +95,12 @@ const EyeContactTrainer = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Warm-up Game</span>
+          <span className="text-[13px] font-medium">热身练习</span>
         </button>
         <h1 className="text-[1.35rem] font-heading font-bold text-foreground">
-          Eye Contact Training 👁️
+          眼神训练 👁️
         </h1>
-        <p className="text-[13px] text-muted-foreground mt-0.5">Build confident, natural eye contact</p>
+        <p className="text-[13px] text-muted-foreground mt-0.5">建立自信、自然的眼神交流</p>
       </div>
 
       <div className="px-5 flex-1 flex flex-col gap-4 max-w-md mx-auto w-full pb-10">
@@ -108,13 +108,13 @@ const EyeContactTrainer = () => {
         {phase === "intro" && (
           <div className="flex flex-col gap-4">
             <div className="rounded-2xl bg-violet-50 border border-violet-100 p-5">
-              <h2 className="text-[14px] font-heading font-bold text-violet-800 mb-3">How it works</h2>
+              <h2 className="text-[14px] font-heading font-bold text-violet-800 mb-3">练习方式</h2>
               <div className="space-y-2.5">
                 {[
-                  { emoji: "📸", text: "We turn on your camera so you can see yourself" },
-                  { emoji: "👁️", text: "Look directly at the camera lens — not the screen" },
-                  { emoji: "🗣️", text: "Answer 5 prompts while holding your gaze" },
-                  { emoji: "⏱️", text: "20 seconds per prompt — stay focused and natural" },
+                  { emoji: "📸", text: "开启你的摄像头，让你能看到自己" },
+                  { emoji: "👁️", text: "直视摄像头镜头 — 而不是屏幕" },
+                  { emoji: "🗣️", text: "回答 5 个提示，同时保持目光" },
+                  { emoji: "⏱️", text: "每个提示 20 秒 — 保持专注和自然" },
                 ].map((s, i) => (
                   <div key={i} className="flex items-start gap-2.5">
                     <span className="text-base">{s.emoji}</span>
@@ -125,8 +125,8 @@ const EyeContactTrainer = () => {
             </div>
             <div className="rounded-2xl bg-card border border-border/50 p-4">
               <p className="text-[13px] text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Pro tip:</strong> Focus on one eye rather than darting between both.
-                Aim for 60–70% eye contact — steady staring feels uncomfortable too.
+                <strong className="text-foreground">小贴士：</strong>专注看一只眼睛而不是在两只眼之间来回看。
+                目标 60-70% 的眼神接触 — 一直盯着看也会让人不舒服。
               </p>
             </div>
             <button
@@ -134,7 +134,7 @@ const EyeContactTrainer = () => {
               className="gradient-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <Camera className="w-4 h-4" />
-              Start Training
+              开始训练
             </button>
           </div>
         )}
@@ -155,7 +155,7 @@ const EyeContactTrainer = () => {
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-white/50 gap-2">
                   <CameraOff className="w-8 h-8" />
-                  <p className="text-[13px]">Camera not available — imagine your conversation partner</p>
+                  <p className="text-[13px]">摄像头不可用 — 想象你的对话对象在镜头后面</p>
                 </div>
               )}
 
@@ -163,7 +163,7 @@ const EyeContactTrainer = () => {
               {!cameraError && (
                 <div className="absolute top-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-none">
                   <div className="w-4 h-4 rounded-full bg-white/40 border-2 border-white animate-pulse" />
-                  <span className="text-[10px] text-white/70 font-semibold tracking-wide">LOOK HERE</span>
+                  <span className="text-[10px] text-white/70 font-semibold tracking-wide">看这里</span>
                 </div>
               )}
 
@@ -182,15 +182,15 @@ const EyeContactTrainer = () => {
                 />
               </div>
               <div className="flex items-center justify-between mt-1">
-                <span className="text-[11px] text-muted-foreground">Round {round + 1} of {TOTAL_ROUNDS}</span>
-                <span className="text-[11px] font-semibold text-violet-600">{timeLeft}s</span>
+                <span className="text-[11px] text-muted-foreground">第 {round + 1} 轮，共 {TOTAL_ROUNDS} 轮</span>
+                <span className="text-[11px] font-semibold text-violet-600">{timeLeft}秒</span>
               </div>
             </div>
 
             {/* Prompt */}
             <div className="rounded-2xl bg-violet-50 border border-violet-100 p-5">
               <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wider mb-2">
-                Answer while looking at the camera:
+                看着摄像头回答：
               </p>
               <p className="text-[16px] font-heading font-semibold text-violet-900 leading-snug">
                 {PROMPTS[round]}
@@ -201,7 +201,7 @@ const EyeContactTrainer = () => {
             <div className="rounded-2xl bg-card border border-border/50 p-3 flex items-center gap-2.5">
               <span className="text-lg">💡</span>
               <p className="text-[12px] text-muted-foreground">
-                Look at the <strong className="text-foreground">camera lens</strong>, not the screen — that's real eye contact on video calls.
+                看<strong className="text-foreground">摄像头镜头</strong>，而不是屏幕 — 这才是视频通话中的真正眼神交流。
               </p>
             </div>
           </div>
@@ -214,18 +214,18 @@ const EyeContactTrainer = () => {
               <CheckCircle2 className="w-8 h-8 text-green-500" />
             </div>
             <div className="text-center">
-              <h2 className="text-[1.2rem] font-heading font-bold text-foreground">Session complete! 🎉</h2>
+              <h2 className="text-[1.2rem] font-heading font-bold text-foreground">训练完成！🎉</h2>
               <p className="text-[13px] text-muted-foreground mt-1">
-                You completed all {TOTAL_ROUNDS} rounds
+                你完成了全部 {TOTAL_ROUNDS} 轮
               </p>
             </div>
             <div className="w-full rounded-2xl bg-violet-50 border border-violet-100 p-5 space-y-3">
-              <p className="text-[13px] font-heading font-bold text-violet-800">Key takeaways</p>
+              <p className="text-[13px] font-heading font-bold text-violet-800">要点总结</p>
               {[
-                "Aim for 60–70% eye contact — not constant staring",
-                "Focus on one eye to feel more natural and genuine",
-                "Brief glances away show you're thinking — totally fine",
-                "Practice before important meetings or presentations",
+                "目标 60-70% 的眼神接触 — 不是一直盯着看",
+                "专注一只眼睛会显得更自然真诚",
+                "偶尔移开目光表示你在思考 — 完全正常",
+                "在重要会议或演讲前多练习",
               ].map((tip, i) => (
                 <div key={i} className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-violet-500 opacity-70" />
@@ -238,13 +238,13 @@ const EyeContactTrainer = () => {
                 onClick={restart}
                 className="flex-1 py-3 rounded-full border border-border text-[14px] font-semibold text-foreground hover:bg-muted/50 transition-all active:scale-95"
               >
-                Try Again
+                再来一次
               </button>
               <button
                 onClick={() => navigate("/warmup")}
                 className="flex-1 gradient-primary text-primary-foreground py-3 rounded-full text-[14px] font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95"
               >
-                Done
+                完成
               </button>
             </div>
           </div>

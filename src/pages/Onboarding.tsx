@@ -35,7 +35,7 @@ declare global {
 const TOTAL_STEPS = 4;
 
 const DIAGNOSTIC_OPENER =
-  "Hey! Let's do a quick warm-up so I can tailor your experience. Tell me — what's a situation where you'd love to feel more confident speaking English?";
+  "你好！我们先简单聊两句，让我了解一下你的情况。告诉我——在什么场景下你希望表达得更自信？";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -101,10 +101,10 @@ export default function Onboarding() {
         .catch(() => {
           setProfile({
             proficiencyLevel: "intermediate",
-            strengths: ["Expressing yourself clearly", "Showing genuine curiosity"],
-            areasToImprove: ["Building natural flow", "Expanding vocabulary range"],
-            recommendedScenarios: ["party", "classmate"],
-            coachNote: "You're already on the right track — keep showing up and you'll surprise yourself!",
+            strengths: ["表达清晰有条理", "善于提出好问题"],
+            areasToImprove: ["增强叙事的感染力", "提升即兴应变能力"],
+            recommendedScenarios: ["elevator_pitch", "interview"],
+            coachNote: "你已经有了很好的基础——坚持练习，你会越来越出色！",
           });
           setIsGenerating(false);
         });
@@ -143,14 +143,14 @@ export default function Onboarding() {
       return;
     }
     if (!speechSupported) {
-      alert("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      alert("此浏览器不支持语音识别，请使用 Chrome 或 Edge。");
       return;
     }
     const API = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     const rec = new API();
     rec.continuous = true;
     rec.interimResults = true;
-    rec.lang = "en-US";
+    rec.lang = "zh-CN";
 
     let finalText = "";
 
@@ -204,13 +204,13 @@ export default function Onboarding() {
 
     setDiagLoading(true);
     try {
-      const result = await getConversationReply(diagHistoryRef.current, "classmate", "Alex");
+      const result = await getConversationReply(diagHistoryRef.current, "classmate", "教练");
       const aiText = result.reply;
       diagHistoryRef.current = [...diagHistoryRef.current, { role: "assistant", content: aiText }];
       setDiagMessages((prev) => [...prev, { role: "ai", text: aiText }]);
       speakAI(aiText);
     } catch {
-      const fallback = "Got it! One more — how would you describe yourself in a few words?";
+      const fallback = "明白了！再来一个——你会怎么形容自己的沟通风格？";
       setDiagMessages((prev) => [...prev, { role: "ai", text: fallback }]);
       speakAI(fallback);
     }
@@ -253,7 +253,7 @@ export default function Onboarding() {
             />
           ))}
         </div>
-        <p className="text-[11px] text-muted-foreground/50 font-medium">Step {step} of {TOTAL_STEPS}</p>
+        <p className="text-[11px] text-muted-foreground/50 font-medium">第 {step} 步，共 {TOTAL_STEPS} 步</p>
       </div>
 
       <div className="flex-1 px-5 pb-8 flex flex-col">
@@ -263,12 +263,12 @@ export default function Onboarding() {
           <div className="flex-1 flex flex-col animate-slide-up">
             <div className="pt-4 pb-6">
               <p className="text-[13px] text-primary font-semibold uppercase tracking-wider mb-1">
-                Hi {user?.name?.split(" ")[0] || "there"} 👋
+                你好 {user?.name?.split(" ")[0] || "朋友"} 👋
               </p>
               <h2 className="text-[24px] font-heading font-bold text-foreground leading-tight">
-                What's your main goal?
+                你最想提升哪个方面？
               </h2>
-              <p className="text-muted-foreground text-[14px] mt-1.5">Pick what matters most to you right now.</p>
+              <p className="text-muted-foreground text-[14px] mt-1.5">选择当前对你最重要的目标。</p>
             </div>
 
             <div className="space-y-3 flex-1">
@@ -306,7 +306,7 @@ export default function Onboarding() {
               onClick={() => setStep(2)}
               className="mt-6 w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-4 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Continue <ChevronRight className="w-4 h-4" />
+              继续 <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -316,9 +316,9 @@ export default function Onboarding() {
           <div className="flex-1 flex flex-col animate-slide-up">
             <div className="pt-4 pb-6">
               <h2 className="text-[24px] font-heading font-bold text-foreground leading-tight">
-                What holds you back?
+                是什么在阻碍你？
               </h2>
-              <p className="text-muted-foreground text-[14px] mt-1.5">Pick up to 3 challenges you face.</p>
+              <p className="text-muted-foreground text-[14px] mt-1.5">选择最多 3 个你面临的挑战。</p>
             </div>
 
             <div className="space-y-2.5 flex-1">
@@ -355,14 +355,14 @@ export default function Onboarding() {
                 onClick={() => setStep(1)}
                 className="rounded-2xl bg-muted/60 px-5 py-4 text-[14px] font-medium text-muted-foreground transition-all hover:bg-muted"
               >
-                Back
+                返回
               </button>
               <button
                 disabled={selectedChallenges.length === 0}
                 onClick={() => setStep(3)}
                 className="flex-1 flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-4 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Continue <ChevronRight className="w-4 h-4" />
+                继续 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -373,10 +373,10 @@ export default function Onboarding() {
           <div className="flex-1 flex flex-col animate-slide-up">
             <div className="pt-4 pb-3">
               <h2 className="text-[24px] font-heading font-bold text-foreground leading-tight">
-                Quick voice warm-up
+                快速语音热身
               </h2>
               <p className="text-muted-foreground text-[14px] mt-1.5">
-                2 short spoken answers — just be yourself!
+                简短回答 2 个问题 — 做自己就好！
               </p>
             </div>
 
@@ -385,7 +385,7 @@ export default function Onboarding() {
               {diagMessages.map((msg, i) => (
                 <div key={i} className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
                   {msg.role === "ai" && (
-                    <img src={aiAvatar} alt="Alex" className="w-7 h-7 rounded-full ring-2 ring-primary/15 shrink-0 mt-0.5" />
+                    <img src={aiAvatar} alt="教练" className="w-7 h-7 rounded-full ring-2 ring-primary/15 shrink-0 mt-0.5" />
                   )}
                   <div
                     className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed ${
@@ -402,7 +402,7 @@ export default function Onboarding() {
               {/* Thinking dots */}
               {diagLoading && (
                 <div className="flex gap-2.5">
-                  <img src={aiAvatar} alt="Alex" className="w-7 h-7 rounded-full ring-2 ring-primary/15 shrink-0 mt-0.5" />
+                  <img src={aiAvatar} alt="教练" className="w-7 h-7 rounded-full ring-2 ring-primary/15 shrink-0 mt-0.5" />
                   <div className="bg-card rounded-2xl rounded-tl-sm px-4 py-3 shadow-soft">
                     <div className="flex gap-1">
                       {[0, 1, 2].map((i) => (
@@ -442,12 +442,12 @@ export default function Onboarding() {
                     {/* Status label */}
                     <p className="text-[12px] text-muted-foreground font-medium">
                       {isSpeaking
-                        ? "Alex is speaking…"
+                        ? "AI 教练正在说话…"
                         : isListening
-                        ? "Tap when done speaking"
+                        ? "说完后点击"
                         : diagLoading
-                        ? "Alex is thinking…"
-                        : "Tap the mic to respond"}
+                        ? "AI 教练正在思考…"
+                        : "点击麦克风回应"}
                     </p>
 
                     {/* Mic button */}
@@ -459,7 +459,7 @@ export default function Onboarding() {
                           ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
                           : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
                       }`}
-                      aria-label={isListening ? "Stop speaking" : "Start speaking"}
+                      aria-label={isListening ? "停止说话" : "开始说话"}
                     >
                       {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
                     </button>
@@ -467,7 +467,7 @@ export default function Onboarding() {
                 ) : (
                   <div className="w-full flex flex-col items-center gap-2">
                     <p className="text-[12px] text-muted-foreground font-medium">
-                      {isSpeaking ? "Alex is speaking…" : diagLoading ? "Alex is thinking…" : "Type your response"}
+                      {isSpeaking ? "AI 教练正在说话…" : diagLoading ? "AI 教练正在思考…" : "输入你的回答"}
                     </p>
                     <div className="w-full flex items-center gap-2">
                       <input
@@ -476,13 +476,13 @@ export default function Onboarding() {
                         onChange={(e) => setTextInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === "Enter") submitTypedTurn(); }}
                         disabled={isSpeaking || diagLoading}
-                        placeholder="Type your answer…"
+                        placeholder="输入你的回答…"
                         className="flex-1 rounded-2xl border-2 border-border/50 bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/60 disabled:opacity-40"
                       />
                       <button
                         onClick={submitTypedTurn}
                         disabled={isSpeaking || diagLoading || !textInput.trim()}
-                        aria-label="Send"
+                        aria-label="发送"
                         className="w-11 h-11 shrink-0 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow-primary transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Send className="w-4 h-4" />
@@ -502,18 +502,18 @@ export default function Onboarding() {
                 >
                   {inputMode === "voice" ? (
                     <>
-                      <Keyboard className="w-3.5 h-3.5" /> Type instead
+                      <Keyboard className="w-3.5 h-3.5" /> 改用文字输入
                     </>
                   ) : (
                     <>
-                      <Mic className="w-3.5 h-3.5" /> Speak instead
+                      <Mic className="w-3.5 h-3.5" /> 改用语音输入
                     </>
                   )}
                 </button>
               </div>
             ) : (
               <p className="text-center text-[13px] text-muted-foreground py-4 animate-fade-in">
-                Great! Generating your profile…
+                很好！正在生成你的档案…
               </p>
             )}
           </div>
@@ -524,10 +524,10 @@ export default function Onboarding() {
           <div className="flex-1 flex flex-col animate-slide-up">
             <div className="pt-4 pb-6">
               <h2 className="text-[24px] font-heading font-bold text-foreground leading-tight">
-                {isGenerating ? "Building your profile…" : "Your SpeakFlow profile"}
+                {isGenerating ? "正在生成你的档案…" : "你的易言档案"}
               </h2>
               <p className="text-muted-foreground text-[14px] mt-1.5">
-                {isGenerating ? "Analyzing your responses…" : "Personalized just for you."}
+                {isGenerating ? "正在分析你的回答…" : "为你量身定制。"}
               </p>
             </div>
 
@@ -539,7 +539,7 @@ export default function Onboarding() {
                   </div>
                   <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-mic-breathe" />
                 </div>
-                <p className="text-[14px] text-muted-foreground text-center">Crafting your personal learning plan…</p>
+                <p className="text-[14px] text-muted-foreground text-center">正在制定你的专属学习计划…</p>
               </div>
             ) : profile ? (
               <div className="flex-1 space-y-4 overflow-y-auto pb-2">
@@ -550,7 +550,7 @@ export default function Onboarding() {
                       {profile.proficiencyLevel === "beginner" ? "🌱" : profile.proficiencyLevel === "intermediate" ? "🔥" : "⚡"}
                     </span>
                     <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-70">Your level</p>
+                      <p className="text-[11px] font-semibold uppercase tracking-wider opacity-70">你的水平</p>
                       <p className="text-[18px] font-heading font-bold">{PROFICIENCY_META[profile.proficiencyLevel].label}</p>
                     </div>
                   </div>
@@ -559,7 +559,7 @@ export default function Onboarding() {
 
                 {/* Strengths */}
                 <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Your strengths</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">你的优势</p>
                   <div className="space-y-1.5">
                     {profile.strengths.map((s, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -572,7 +572,7 @@ export default function Onboarding() {
 
                 {/* Focus areas */}
                 <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">Focus areas</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">提升方向</p>
                   <div className="space-y-1.5">
                     {profile.areasToImprove.map((a, i) => (
                       <div key={i} className="flex items-start gap-2">
@@ -587,7 +587,7 @@ export default function Onboarding() {
 
                 {/* Coach note */}
                 <div className="rounded-2xl bg-secondary p-4 border border-border/30 shadow-soft">
-                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">From your coach</p>
+                  <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">来自你的教练</p>
                   <p className="text-[14px] text-secondary-foreground leading-relaxed italic">"{profile.coachNote}"</p>
                 </div>
 
@@ -595,7 +595,7 @@ export default function Onboarding() {
                   onClick={finishOnboarding}
                   className="w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-4 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98]"
                 >
-                  Start practicing <ChevronRight className="w-4 h-4" />
+                  开始练习 <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             ) : null}

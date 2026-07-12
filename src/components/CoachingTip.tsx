@@ -5,9 +5,9 @@ export type CoachingLayer = "subtle" | "rewrite" | "interrupt" | "prompt";
 export type CoachingFlavor = "suggestion" | "rewrite" | "nudge" | "humor" | "interrupt" | "prompt";
 
 const DIMENSION_BADGE: Record<CoachingDimension, { emoji: string; label: string; cls: string }> = {
-  content:  { emoji: "💬", label: "Content",  cls: "bg-blue-50 text-blue-600 border-blue-100" },
-  structure:{ emoji: "🧱", label: "Structure", cls: "bg-amber-50 text-amber-600 border-amber-100" },
-  delivery: { emoji: "🎙️", label: "Delivery",  cls: "bg-violet-50 text-violet-600 border-violet-100" },
+  content:  { emoji: "💬", label: "内容",  cls: "bg-blue-50 text-blue-600 border-blue-100" },
+  structure:{ emoji: "🧱", label: "结构", cls: "bg-amber-50 text-amber-600 border-amber-100" },
+  delivery: { emoji: "🎙️", label: "表达",  cls: "bg-violet-50 text-violet-600 border-violet-100" },
 };
 
 interface CoachingTipProps {
@@ -30,7 +30,7 @@ const flavorConfig: Record<CoachingFlavor, {
 }> = {
   suggestion: {
     icon: Lightbulb,
-    label: "Try this",
+    label: "试试这样",
     colorClass: "text-coaching",
     bgClass: "bg-coaching-soft",
     borderClass: "border-coaching/15",
@@ -38,7 +38,7 @@ const flavorConfig: Record<CoachingFlavor, {
   },
   rewrite: {
     icon: Sparkles,
-    label: "More natural",
+    label: "更自然",
     colorClass: "text-[hsl(var(--coaching-rewrite))]",
     bgClass: "bg-[hsl(var(--coaching-rewrite-soft))]",
     borderClass: "border-[hsl(var(--coaching-rewrite)/0.15)]",
@@ -46,7 +46,7 @@ const flavorConfig: Record<CoachingFlavor, {
   },
   nudge: {
     icon: MessageCircle,
-    label: "Quick tip",
+    label: "小提示",
     colorClass: "text-coaching",
     bgClass: "bg-coaching-soft",
     borderClass: "border-coaching/15",
@@ -54,7 +54,7 @@ const flavorConfig: Record<CoachingFlavor, {
   },
   humor: {
     icon: Smile,
-    label: "Playful option",
+    label: "俏皮选项",
     colorClass: "text-[hsl(var(--coaching-humor))]",
     bgClass: "bg-[hsl(var(--coaching-humor-soft))]",
     borderClass: "border-[hsl(var(--coaching-humor)/0.15)]",
@@ -62,7 +62,7 @@ const flavorConfig: Record<CoachingFlavor, {
   },
   interrupt: {
     icon: AlertCircle,
-    label: "Coach stepping in",
+    label: "教练介入",
     colorClass: "text-[hsl(var(--coaching-interrupt))]",
     bgClass: "bg-[hsl(var(--coaching-interrupt-soft))]",
     borderClass: "border-[hsl(var(--coaching-interrupt)/0.2)]",
@@ -70,7 +70,7 @@ const flavorConfig: Record<CoachingFlavor, {
   },
   prompt: {
     icon: HelpCircle,
-    label: "Think about this",
+    label: "想一想",
     colorClass: "text-emerald-600",
     bgClass: "bg-emerald-50",
     borderClass: "border-emerald-100",
@@ -136,7 +136,7 @@ const CoachingTip = ({ layer, flavor, text, originalText, dimension, onDismiss, 
               onClick={onApply}
               className={`mt-3 text-[11px] font-semibold ${config.colorClass} ${config.iconBgClass} px-3 py-1.5 rounded-full hover:opacity-80 transition-opacity`}
             >
-              Use this phrase ✨
+              使用这个表达 ✨
             </button>
           )}
         </div>
@@ -191,7 +191,7 @@ const CoachingTip = ({ layer, flavor, text, originalText, dimension, onDismiss, 
             onClick={onApply}
             className={`mt-3 text-[11px] font-bold ${config.colorClass} ${config.iconBgClass} px-3.5 py-1.5 rounded-full hover:opacity-80 transition-opacity`}
           >
-            Got it 👍
+            知道了 👍
           </button>
         )}
       </div>

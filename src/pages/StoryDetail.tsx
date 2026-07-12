@@ -9,18 +9,18 @@ import { refineStory, chatAboutStory } from "@/lib/storyAI";
 type Tab = "versions" | "structure" | "chat";
 
 const STRUCTURE_FIELDS: { key: keyof NonNullable<Story["structure"]>; label: string; emoji: string; desc: string }[] = [
-  { key: "situation", label: "Situation", emoji: "🌍", desc: "Context & background" },
-  { key: "challenge", label: "Challenge", emoji: "⚠️", desc: "The problem or task" },
-  { key: "action",    label: "Action",    emoji: "⚡", desc: "What you did" },
-  { key: "result",    label: "Result",    emoji: "🏆", desc: "The outcome" },
-  { key: "insight",   label: "Insight",   emoji: "💡", desc: "What you learned" },
+  { key: "situation", label: "情境", emoji: "🌍", desc: "背景和上下文" },
+  { key: "challenge", label: "挑战", emoji: "⚠️", desc: "面临的问题或任务" },
+  { key: "action",    label: "行动", emoji: "⚡", desc: "你做了什么" },
+  { key: "result",    label: "结果", emoji: "🏆", desc: "最终的成果" },
+  { key: "insight",   label: "洞察", emoji: "💡", desc: "你学到了什么" },
 ];
 
 const SUGGESTED_QUESTIONS = [
-  "How can I make this more compelling?",
-  "What details should I add?",
-  "How do I tell this in an interview?",
-  "What's the emotional hook here?",
+  "怎么让这个故事更有吸引力？",
+  "应该补充哪些细节？",
+  "在面试中怎么讲这个故事？",
+  "这个故事的情感切入点在哪里？",
 ];
 
 const StoryDetail = () => {
@@ -110,7 +110,7 @@ const StoryDetail = () => {
   if (!story) {
     return (
       <div className="min-h-screen gradient-warm flex items-center justify-center">
-        <p className="text-muted-foreground text-[14px]">Story not found.</p>
+        <p className="text-muted-foreground text-[14px]">未找到故事。</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ const StoryDetail = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-4 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Story Library</span>
+          <span className="text-[13px] font-medium">故事工坊</span>
         </button>
         <h1 className="text-[1.2rem] font-heading font-bold text-foreground leading-snug">
           {story.title}
@@ -163,7 +163,7 @@ const StoryDetail = () => {
                 tab === t ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "versions" ? "Versions" : t === "structure" ? "Structure" : "Chat"}
+              {t === "versions" ? "版本" : t === "structure" ? "结构" : "对话"}
             </button>
           ))}
         </div>
@@ -176,7 +176,7 @@ const StoryDetail = () => {
             {/* Original */}
             <div className="rounded-2xl bg-card border border-border/50 p-4">
               <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Original
+                原文
               </p>
               <p className="text-[13px] text-foreground leading-relaxed">{story.raw}</p>
             </div>
@@ -214,7 +214,7 @@ const StoryDetail = () => {
             <div className="rounded-2xl bg-card border border-border/50 p-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {TONE_CONFIG[activeTone].emoji} {TONE_CONFIG[activeTone].label} version
+                  {TONE_CONFIG[activeTone].emoji} {TONE_CONFIG[activeTone].label}版本
                 </p>
                 {story.versions[activeTone] && (
                   <button
@@ -222,9 +222,9 @@ const StoryDetail = () => {
                     className="flex items-center gap-1 text-[11px] text-primary font-semibold"
                   >
                     {copiedTone === activeTone ? (
-                      <><Check className="w-3 h-3" /> Copied</>
+                      <><Check className="w-3 h-3" /> 已复制</>
                     ) : (
-                      <><Copy className="w-3 h-3" /> Copy</>
+                      <><Copy className="w-3 h-3" /> 复制</>
                     )}
                   </button>
                 )}
@@ -241,16 +241,16 @@ const StoryDetail = () => {
                     className="mt-3 text-[11px] text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5 disabled:opacity-40"
                   >
                     {generatingTone === activeTone ? (
-                      <><Loader2 className="w-3 h-3 animate-spin" /> Regenerating…</>
+                      <><Loader2 className="w-3 h-3 animate-spin" /> 正在重新生成…</>
                     ) : (
-                      "↺ Regenerate"
+                      "↺ 重新生成"
                     )}
                   </button>
                 </>
               ) : (
                 <div className="flex flex-col items-center py-6 gap-3">
                   <p className="text-[13px] text-muted-foreground text-center">
-                    No {TONE_CONFIG[activeTone].label.toLowerCase()} version yet.
+                    还没有{TONE_CONFIG[activeTone].label}版本。
                   </p>
                   <button
                     onClick={() => generateVersion(activeTone)}
@@ -258,9 +258,9 @@ const StoryDetail = () => {
                     className="gradient-primary text-primary-foreground px-5 py-2 rounded-full text-[13px] font-semibold shadow-glow-primary disabled:opacity-60 flex items-center gap-2"
                   >
                     {generatingTone === activeTone ? (
-                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Generating…</>
+                      <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 正在生成…</>
                     ) : (
-                      `✨ Generate ${TONE_CONFIG[activeTone].label} version`
+                      `✨ 生成${TONE_CONFIG[activeTone].label}版本`
                     )}
                   </button>
                 </div>
@@ -274,7 +274,7 @@ const StoryDetail = () => {
           <>
             <div className="rounded-2xl bg-amber-50 border border-amber-100 px-4 py-3">
               <p className="text-[12px] text-amber-700 leading-snug">
-                <strong>STAR framework</strong> — the backbone of a compelling story. Use this to check your story has all the key elements.
+                <strong>STAR 框架</strong> — 好故事的核心骨架。用这个来检查你的故事是否包含所有关键要素。
               </p>
             </div>
             {story.structure ? (
@@ -289,7 +289,7 @@ const StoryDetail = () => {
                   </div>
                   <p className="text-[13px] text-foreground leading-snug pl-7">
                     {story.structure![field.key] || (
-                      <span className="text-muted-foreground italic">Not detected — ask your coach in the Chat tab!</span>
+                      <span className="text-muted-foreground italic">未检测到 — 在"对话"标签页中问教练吧！</span>
                     )}
                   </p>
                 </div>
@@ -297,7 +297,7 @@ const StoryDetail = () => {
             ) : (
               <div className="rounded-2xl bg-card border border-border/50 p-6 text-center">
                 <p className="text-[13px] text-muted-foreground">
-                  Structure not available for this story. Try discussing it in the Chat tab.
+                  此故事暂无结构信息。试试在"对话"标签页中讨论。
                 </p>
               </div>
             )}
@@ -376,7 +376,7 @@ const StoryDetail = () => {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendChat()}
-                  placeholder="Ask your coach about this story…"
+                  placeholder="向教练提问关于这个故事…"
                   className="flex-1 bg-transparent px-3 py-2 text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
                 />
                 <button

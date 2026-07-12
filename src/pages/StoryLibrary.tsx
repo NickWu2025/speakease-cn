@@ -36,7 +36,7 @@ const StoryLibrary = () => {
   };
 
   const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    new Date(iso).toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
 
   return (
     <div className="min-h-screen gradient-warm flex flex-col">
@@ -47,7 +47,7 @@ const StoryLibrary = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Home</span>
+          <span className="text-[13px] font-medium">首页</span>
         </button>
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shadow-sm">
@@ -55,10 +55,10 @@ const StoryLibrary = () => {
           </div>
           <div>
             <h1 className="text-[1.35rem] font-heading font-bold text-foreground leading-tight">
-              Story Library
+              故事工坊
             </h1>
             <p className="text-[13px] text-muted-foreground mt-0.5">
-              {stories.length} {stories.length === 1 ? "story" : "stories"} saved
+              {stories.length} 个故事已保存
             </p>
           </div>
         </div>
@@ -70,7 +70,7 @@ const StoryLibrary = () => {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
           <input
             type="text"
-            placeholder="Search stories…"
+            placeholder="搜索故事…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border/50 text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
@@ -88,7 +88,7 @@ const StoryLibrary = () => {
                   : "bg-card border-border/50 text-muted-foreground hover:text-foreground"
               }`}
             >
-              All
+              全部
             </button>
             {allTags.map((tag) => {
               const cfg = TAG_CONFIG[tag];
@@ -119,9 +119,9 @@ const StoryLibrary = () => {
             {stories.length === 0 ? (
               <>
                 <div className="text-center">
-                  <p className="text-[15px] font-heading font-semibold text-foreground">No stories yet</p>
+                  <p className="text-[15px] font-heading font-semibold text-foreground">还没有故事</p>
                   <p className="text-[13px] text-muted-foreground mt-2 max-w-[260px] leading-snug">
-                    Stories are automatically extracted from your practice conversations at the end of each session.
+                    故事会在每次练习结束后自动从对话中提取。
                   </p>
                 </div>
                 <button
@@ -129,11 +129,11 @@ const StoryLibrary = () => {
                   className="gradient-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold shadow-glow-primary text-[13px] flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
-                  Start a conversation
+                  开始对话
                 </button>
               </>
             ) : (
-              <p className="text-[13px] text-muted-foreground">No stories match your search.</p>
+              <p className="text-[13px] text-muted-foreground">没有找到匹配的故事。</p>
             )}
           </div>
         )}

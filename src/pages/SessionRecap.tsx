@@ -13,25 +13,25 @@ const DIMENSION_CONFIG: Record<
   { label: string; emoji: string; desc: string; accentCls: string; bgCls: string; borderCls: string }
 > = {
   content: {
-    label: "Content",
+    label: "内容",
     emoji: "💬",
-    desc: "Clarity of meaning & natural expression",
+    desc: "表达清晰度和自然程度",
     accentCls: "text-blue-600",
     bgCls: "bg-blue-50",
     borderCls: "border-blue-100",
   },
   structure: {
-    label: "Structure",
+    label: "结构",
     emoji: "🧱",
-    desc: "Logical flow & completeness",
+    desc: "逻辑流畅性和完整性",
     accentCls: "text-amber-600",
     bgCls: "bg-amber-50",
     borderCls: "border-amber-100",
   },
   delivery: {
-    label: "Delivery",
+    label: "表达",
     emoji: "🎙️",
-    desc: "Tone, confidence & engagement",
+    desc: "语气、自信度和互动感",
     accentCls: "text-violet-600",
     bgCls: "bg-violet-50",
     borderCls: "border-violet-100",
@@ -42,9 +42,9 @@ const RATING_CONFIG: Record<
   DimensionFeedback["rating"],
   { label: string; cls: string }
 > = {
-  strong:       { label: "Strong",     cls: "bg-green-100 text-green-700 border-green-200" },
-  developing:   { label: "Developing", cls: "bg-amber-100 text-amber-700 border-amber-200" },
-  "needs-work": { label: "Focus here", cls: "bg-blue-100 text-blue-700 border-blue-200" },
+  strong:       { label: "优秀",     cls: "bg-green-100 text-green-700 border-green-200" },
+  developing:   { label: "成长中",   cls: "bg-amber-100 text-amber-700 border-amber-200" },
+  "needs-work": { label: "重点关注", cls: "bg-blue-100 text-blue-700 border-blue-200" },
 };
 
 function DimensionCard({
@@ -102,7 +102,7 @@ const SessionRecap = () => {
     messages?: { role: "user" | "ai"; text: string }[];
   } | null;
 
-  const scenarioTitle = state?.scenario || "Practice Session";
+  const scenarioTitle = state?.scenario || "练习记录";
   const duration = state?.duration || 0;
   const messages = state?.messages ?? [];
 
@@ -159,7 +159,7 @@ const SessionRecap = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Home</span>
+          <span className="text-[13px] font-medium">首页</span>
         </button>
 
         <div className="stagger-1 flex items-center gap-4">
@@ -168,7 +168,7 @@ const SessionRecap = () => {
           </div>
           <div>
             <h1 className="text-[1.35rem] font-heading font-bold text-foreground leading-tight">
-              Session recap 🎉
+              会话复盘 🎉
             </h1>
             <p className="text-[13px] text-muted-foreground mt-0.5">
               {scenarioTitle} · {formatTime(duration)}
@@ -181,11 +181,11 @@ const SessionRecap = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-8 h-8 text-primary animate-spin" />
-            <p className="text-[14px] text-muted-foreground font-medium">Analyzing your conversation…</p>
+            <p className="text-[14px] text-muted-foreground font-medium">正在分析你的对话…</p>
           </div>
         ) : error ? (
           <div className="rounded-2xl surface-elevated p-6 border border-border/50 text-center">
-            <p className="text-[14px] text-muted-foreground">Couldn't load analysis. Check your API key and try again.</p>
+            <p className="text-[14px] text-muted-foreground">无法加载分析，请检查 API 密钥后重试。</p>
           </div>
         ) : (
           <>
@@ -193,7 +193,7 @@ const SessionRecap = () => {
             {analysis?.dimensions && (
               <div className="stagger-2 space-y-3">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Coaching breakdown
+                  教练分析
                 </p>
                 {(["content", "structure", "delivery"] as CoachingDimension[]).map((dim) => (
                   <DimensionCard key={dim} dim={dim} feedback={analysis.dimensions[dim]} />
@@ -207,7 +207,7 @@ const SessionRecap = () => {
                 <div className="flex items-center gap-2 mb-4">
                   <Lightbulb className="w-4 h-4 text-accent" />
                   <h2 className="text-[13px] font-heading font-bold text-foreground uppercase tracking-wider">
-                    Moments to refine
+                    可优化的时刻
                   </h2>
                 </div>
                 <div className="space-y-4">
@@ -238,7 +238,7 @@ const SessionRecap = () => {
             {(analysis?.phrases?.length ?? 0) > 0 && (
               <div className="stagger-4 rounded-2xl bg-primary/5 p-5 border border-primary/10">
                 <h2 className="text-[13px] font-heading font-bold text-foreground uppercase tracking-wider mb-3">
-                  Phrases to reuse 💬
+                  可复用表达 💬
                 </h2>
                 <div className="space-y-2">
                   {analysis!.phrases.map((phrase, idx) => (
@@ -253,15 +253,15 @@ const SessionRecap = () => {
             {/* ── Encouragement + CTA ── */}
             <div className="stagger-5 text-center py-8">
               <p className="text-[17px] font-heading font-bold text-foreground mb-1">
-                {analysis?.encouragement ?? "You're getting more natural every session"}
+                {analysis?.encouragement ?? "你每次练习都在变得更自然"}
               </p>
-              <p className="text-[13px] text-muted-foreground">Confidence comes with practice 💪</p>
+              <p className="text-[13px] text-muted-foreground">信心来自练习 💪</p>
               <button
                 onClick={() => navigate("/")}
                 className="mt-6 gradient-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95 inline-flex items-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
-                Practice Again
+                再次练习
               </button>
             </div>
 
@@ -273,15 +273,15 @@ const SessionRecap = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[14px] font-semibold text-foreground">
-                    {savedStoryCount} {savedStoryCount === 1 ? "story" : "stories"} saved 📖
+                    {savedStoryCount} 个故事已保存 📖
                   </p>
-                  <p className="text-[12px] text-muted-foreground">Added to your Story Library</p>
+                  <p className="text-[12px] text-muted-foreground">已添加到你的故事工坊</p>
                 </div>
                 <button
                   onClick={() => navigate("/stories")}
                   className="text-[12px] font-semibold text-primary shrink-0 hover:underline"
                 >
-                  View →
+                  查看 →
                 </button>
               </div>
             )}

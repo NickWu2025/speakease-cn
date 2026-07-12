@@ -51,15 +51,15 @@ function AuthInner() {
           <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl scale-150 animate-mic-breathe" />
           <img
             src={aiAvatar}
-            alt="SpeakFlow"
+            alt="易言 SpeakEase"
             width={80}
             height={80}
             className="relative rounded-full shadow-glow-primary ring-4 ring-background"
           />
         </div>
-        <h1 className="text-[2rem] font-heading font-bold text-foreground tracking-tight">SpeakFlow</h1>
+        <h1 className="text-[2rem] font-heading font-bold text-foreground tracking-tight">易言 SpeakEase</h1>
         <p className="text-muted-foreground mt-2 text-[15px] text-center max-w-[260px] leading-relaxed">
-          Your AI conversation coach — personalized from day one
+          你的 AI 演讲叙事教练 — 从第一天起为你量身定制
         </p>
       </div>
 
@@ -88,15 +88,15 @@ function AuthInner() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
-            <span className="text-[11px] text-muted-foreground/50">(add VITE_GOOGLE_CLIENT_ID)</span>
+            使用 Google 登录
+            <span className="text-[11px] text-muted-foreground/50">（需配置 VITE_GOOGLE_CLIENT_ID）</span>
           </button>
         )}
 
         {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="flex-1 h-px bg-border/50" />
-          <span className="text-[12px] text-muted-foreground/50 font-medium">or</span>
+          <span className="text-[12px] text-muted-foreground/50 font-medium">或</span>
           <div className="flex-1 h-px bg-border/50" />
         </div>
 
@@ -105,7 +105,7 @@ function AuthInner() {
           <div className="space-y-3 animate-slide-up">
             <input
               type="text"
-              placeholder="What's your name?"
+              placeholder="你叫什么名字？"
               value={guestName}
               onChange={(e) => setGuestName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleGuest()}
@@ -116,7 +116,7 @@ function AuthInner() {
               onClick={handleGuest}
               className="w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-3.5 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98]"
             >
-              Start my journey
+              开始我的旅程
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -125,14 +125,14 @@ function AuthInner() {
             onClick={handleGuest}
             className="w-full flex items-center justify-center gap-2 rounded-2xl bg-secondary px-5 py-3.5 text-[15px] font-medium text-secondary-foreground hover:bg-secondary/80 transition-all active:scale-[0.98]"
           >
-            Continue without account
+            无需账号，直接开始
             <ChevronRight className="w-4 h-4 opacity-50" />
           </button>
         )}
       </div>
 
       <p className="mt-10 text-[11px] text-muted-foreground/40 text-center max-w-[240px] leading-relaxed">
-        Your data stays on your device. No account required to practice.
+        你的数据保存在本地，无需账号即可练习。
       </p>
     </div>
   );

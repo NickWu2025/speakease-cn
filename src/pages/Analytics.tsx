@@ -13,9 +13,9 @@ import { loadStories } from "@/lib/storyStore";
 import { generateProgressReport, ProgressReport } from "@/lib/storyAI";
 
 const DIM_CONFIG: Record<DimKey, { label: string; emoji: string; bar: string; track: string; text: string }> = {
-  content:  { label: "Content",   emoji: "💬", bar: "bg-blue-400",   track: "bg-blue-100",   text: "text-blue-600" },
-  structure:{ label: "Structure", emoji: "🧱", bar: "bg-amber-400",  track: "bg-amber-100",  text: "text-amber-600" },
-  delivery: { label: "Delivery",  emoji: "🎙️", bar: "bg-violet-400", track: "bg-violet-100", text: "text-violet-600" },
+  content:  { label: "内容",   emoji: "💬", bar: "bg-blue-400",   track: "bg-blue-100",   text: "text-blue-600" },
+  structure:{ label: "结构", emoji: "🧱", bar: "bg-amber-400",  track: "bg-amber-100",  text: "text-amber-600" },
+  delivery: { label: "表达",  emoji: "🎙️", bar: "bg-violet-400", track: "bg-violet-100", text: "text-violet-600" },
 };
 
 const RATING_DOT: Record<DimensionRating, string> = {
@@ -32,9 +32,9 @@ const READINESS_CONFIG: Record<string, { cls: string; icon: typeof CheckCircle2 
 
 function formatRelative(iso: string) {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  return `${days}d ago`;
+  if (days === 0) return "今天";
+  if (days === 1) return "昨天";
+  return `${days} 天前`;
 }
 
 function formatDuration(s: number) {
@@ -82,13 +82,13 @@ const Analytics = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Home</span>
+          <span className="text-[13px] font-medium">首页</span>
         </button>
         <h1 className="text-[1.35rem] font-heading font-bold text-foreground leading-tight">
-          Analytics 📊
+          数据分析 📊
         </h1>
         <p className="text-[13px] text-muted-foreground mt-0.5">
-          Track your progress and plan what's next
+          追踪你的进步，规划下一步
         </p>
       </div>
 
@@ -96,15 +96,15 @@ const Analytics = () => {
         {sessions.length === 0 ? (
           <div className="rounded-2xl bg-card border border-border/50 p-8 text-center">
             <p className="text-[32px] mb-3">📊</p>
-            <p className="text-[15px] font-heading font-semibold text-foreground">No sessions yet</p>
+            <p className="text-[15px] font-heading font-semibold text-foreground">还没有练习记录</p>
             <p className="text-[13px] text-muted-foreground mt-2 leading-snug">
-              Complete your first conversation to start tracking your progress.
+              完成第一次对话后即可开始追踪进步。
             </p>
             <button
               onClick={() => navigate("/scenarios")}
               className="mt-4 gradient-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold shadow-glow-primary text-[13px]"
             >
-              Start practicing
+              开始练习
             </button>
           </div>
         ) : (
@@ -112,9 +112,9 @@ const Analytics = () => {
             {/* ── Summary Stats ── */}
             <div className="grid grid-cols-3 gap-2">
               {[
-                { value: sessions.length, label: "Sessions",       emoji: "🗣️" },
-                { value: storyCount,      label: "Stories saved",  emoji: "📖" },
-                { value: stats?.streak ?? 0, label: "Day streak",  emoji: "🔥" },
+                { value: sessions.length, label: "练习次数",       emoji: "🗣️" },
+                { value: storyCount,      label: "已保存故事",  emoji: "📖" },
+                { value: stats?.streak ?? 0, label: "连续天数",  emoji: "🔥" },
               ].map((s) => (
                 <div key={s.label} className="rounded-2xl bg-card border border-border/50 p-3 text-center shadow-soft">
                   <p className="text-lg mb-0.5">{s.emoji}</p>
@@ -128,7 +128,7 @@ const Analytics = () => {
             {stats && (
               <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
                 <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                  Skill breakdown
+                  能力分析
                 </p>
                 <div className="space-y-4">
                   {(["content", "structure", "delivery"] as DimKey[]).map((dim) => {
@@ -158,9 +158,9 @@ const Analytics = () => {
                           <div className={`h-full rounded-full ${cfg.bar} transition-all`} style={{ width: `${d.barPct}%` }} />
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-1">
-                          Based on {sessions.length} session{sessions.length !== 1 ? "s" : ""}
+                          基于 {sessions.length} 次练习
                           {d.trend !== "stable" && sessions.length >= 4
-                            ? d.trend === "up" ? " · improving recently 🎉" : " · recent dip — keep at it"
+                            ? d.trend === "up" ? " · 最近有进步 🎉" : " · 最近略有下降 — 继续加油"
                             : ""}
                         </p>
                       </div>
@@ -171,8 +171,8 @@ const Analytics = () => {
                 {/* Focus recommendation */}
                 <div className="mt-4 pt-3 border-t border-border/40">
                   <p className="text-[12px] text-muted-foreground">
-                    💡 <strong className="text-foreground">Focus area:</strong>{" "}
-                    {DIM_CONFIG[stats.weakestDim].label} — this is where targeted practice will have the biggest impact.
+                    💡 <strong className="text-foreground">重点提升方向：</strong>{" "}
+                    {DIM_CONFIG[stats.weakestDim].label} — 在这个维度上针对性练习效果最好。
                   </p>
                 </div>
               </div>
@@ -182,7 +182,7 @@ const Analytics = () => {
             {readiness && (
               <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
                 <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  Scenario readiness
+                  场景准备度
                 </p>
                 <div className="space-y-2">
                   {(["social", "interview", "presentation"] as const).map((scenario) => {
@@ -193,7 +193,7 @@ const Analytics = () => {
                     return (
                       <div key={scenario} className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 ${cfg.cls}`}>
                         <Icon className="w-4 h-4 shrink-0" />
-                        <span className="text-[13px] font-semibold capitalize flex-1">{scenario}</span>
+                        <span className="text-[13px] font-semibold flex-1">{scenario === "social" ? "演讲展示" : scenario === "interview" ? "面试模拟" : "创业路演"}</span>
                         <span className="text-[12px] font-medium">{level}</span>
                       </div>
                     );
@@ -201,7 +201,7 @@ const Analytics = () => {
                 </div>
                 {!report && (
                   <p className="text-[11px] text-muted-foreground mt-2.5">
-                    Generate an AI report below for personalized readiness scores.
+                    在下方生成 AI 报告，获取个性化的准备度评估。
                   </p>
                 )}
               </div>
@@ -211,7 +211,7 @@ const Analytics = () => {
             <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  AI progress report
+                  AI 进步报告
                 </p>
                 {!report && (
                   <button
@@ -220,9 +220,9 @@ const Analytics = () => {
                     className="flex items-center gap-1.5 gradient-primary text-primary-foreground text-[11px] font-semibold px-3 py-1.5 rounded-full shadow-glow-primary disabled:opacity-60"
                   >
                     {reportLoading ? (
-                      <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</>
+                      <><Loader2 className="w-3 h-3 animate-spin" /> 生成中…</>
                     ) : (
-                      <><Sparkles className="w-3 h-3" /> Generate</>
+                      <><Sparkles className="w-3 h-3" /> 生成</>
                     )}
                   </button>
                 )}
@@ -230,7 +230,7 @@ const Analytics = () => {
 
               {!report && !reportLoading && (
                 <p className="text-[13px] text-muted-foreground leading-snug">
-                  Get a personalized summary of your key improvements, focus areas, and scenario readiness — powered by AI.
+                  获取一份个性化的进步总结、重点提升方向和场景准备度评估 — 由 AI 驱动。
                 </p>
               )}
 
@@ -250,7 +250,7 @@ const Analytics = () => {
                   {/* Improvements */}
                   <div>
                     <p className="text-[11px] font-bold text-green-600 uppercase tracking-wider mb-2">
-                      ✓ What's working
+                      ✓ 做得好的地方
                     </p>
                     <div className="space-y-1.5">
                       {report.improvements.map((item, i) => (
@@ -265,7 +265,7 @@ const Analytics = () => {
                   {/* Focus areas */}
                   <div>
                     <p className="text-[11px] font-bold text-primary uppercase tracking-wider mb-2">
-                      → Focus areas
+                      → 重点提升方向
                     </p>
                     <div className="space-y-1.5">
                       {report.focusAreas.map((item, i) => (
@@ -282,7 +282,7 @@ const Analytics = () => {
                     disabled={reportLoading}
                     className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    ↺ Regenerate
+                    ↺ 重新生成
                   </button>
                 </div>
               )}
@@ -291,7 +291,7 @@ const Analytics = () => {
             {/* ── Session History ── */}
             <div className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
               <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Session history
+                练习历史
               </p>
               <div className="space-y-2.5">
                 {displayedSessions.map((s) => (
@@ -324,7 +324,7 @@ const Analytics = () => {
                   onClick={() => setShowAll((v) => !v)}
                   className="mt-3 text-[12px] text-primary font-semibold"
                 >
-                  {showAll ? "Show less" : `Show all ${sessions.length} sessions`}
+                  {showAll ? "收起" : `查看全部 ${sessions.length} 次练习`}
                 </button>
               )}
             </div>
@@ -338,14 +338,14 @@ const Analytics = () => {
                 <BookOpen className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-semibold text-foreground">Story Portfolio</p>
+                <p className="text-[14px] font-semibold text-foreground">故事集</p>
                 <p className="text-[12px] text-muted-foreground">
                   {storyCount > 0
-                    ? `${storyCount} ${storyCount === 1 ? "story" : "stories"} saved — ready to refine`
-                    : "Stories are extracted from your conversations automatically"}
+                    ? `已保存 ${storyCount} 个故事 — 可以继续打磨`
+                    : "故事会从你的对话中自动提取"}
                 </p>
               </div>
-              <span className="text-[12px] text-primary font-semibold shrink-0">View →</span>
+              <span className="text-[12px] text-primary font-semibold shrink-0">查看 →</span>
             </div>
           </>
         )}

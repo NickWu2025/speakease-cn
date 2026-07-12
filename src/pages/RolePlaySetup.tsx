@@ -9,7 +9,7 @@ interface LocationState {
   partnerName: string;
 }
 
-const PARTNER_NAMES = ["Alex", "Morgan", "Jordan", "Sam", "Riley", "Casey"];
+const PARTNER_NAMES = ["张总", "李经理", "王面试官", "刘总监", "陈总", "赵经理"];
 
 function OptionGrid({
   options,
@@ -53,15 +53,15 @@ export default function RolePlaySetup() {
   const location = useLocation();
   const state = (location.state ?? {}) as LocationState;
 
-  const scenarioId = state.scenarioId ?? "classmate";
-  const scenarioTitle = state.scenarioTitle ?? "Conversation";
-  const partnerName = state.partnerName ?? "Alex";
+  const scenarioId = state.scenarioId ?? "elevator_pitch";
+  const scenarioTitle = state.scenarioTitle ?? "对话练习";
+  const partnerName = state.partnerName ?? "张总";
 
   const defaults = SCENARIO_ROLE_DEFAULTS[scenarioId] ?? {};
 
-  const [counterpartRole, setCounterpartRole] = useState(defaults.counterpartRole ?? "peer");
+  const [counterpartRole, setCounterpartRole] = useState(defaults.counterpartRole ?? "investor");
   const [personality, setPersonality] = useState(defaults.personality ?? "friendly");
-  const [culturalBackground, setCulturalBackground] = useState(defaults.culturalBackground ?? "american");
+  const [culturalBackground, setCulturalBackground] = useState(defaults.culturalBackground ?? "chinese_mainland");
   const [topic, setTopic] = useState("");
   const [selectedName, setSelectedName] = useState(partnerName);
 
@@ -87,10 +87,10 @@ export default function RolePlaySetup() {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-3 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Back</span>
+          <span className="text-[13px] font-medium">返回</span>
         </button>
         <h1 className="text-[1.4rem] font-heading font-bold text-foreground leading-tight">
-          Set up your partner
+          设置你的对话对象
         </h1>
         <p className="text-muted-foreground text-[13px] mt-0.5">{scenarioTitle}</p>
       </div>
@@ -100,7 +100,7 @@ export default function RolePlaySetup() {
         {/* Partner name */}
         <section>
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-            Partner name
+            对话对象姓名
           </p>
           <div className="flex gap-2 flex-wrap">
             {PARTNER_NAMES.map((name) => (
@@ -122,7 +122,7 @@ export default function RolePlaySetup() {
         {/* Counterpart role */}
         <section>
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-            Who are you talking to?
+            对方的角色
           </p>
           <OptionGrid options={ROLES} selected={counterpartRole} onSelect={setCounterpartRole} />
         </section>
@@ -130,7 +130,7 @@ export default function RolePlaySetup() {
         {/* Personality */}
         <section>
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-            Their personality
+            对方性格
           </p>
           <OptionGrid options={PERSONALITIES} selected={personality} onSelect={setPersonality} />
         </section>
@@ -138,7 +138,7 @@ export default function RolePlaySetup() {
         {/* Cultural background */}
         <section>
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-            Cultural context
+            沟通场景
           </p>
           <OptionGrid options={CULTURES} selected={culturalBackground} onSelect={setCulturalBackground} />
         </section>
@@ -146,17 +146,17 @@ export default function RolePlaySetup() {
         {/* Optional topic */}
         <section>
           <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Topic / context <span className="normal-case font-normal text-muted-foreground/50">(optional)</span>
+            话题 / 背景 <span className="normal-case font-normal text-muted-foreground/50">（可选）</span>
           </p>
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder={
-              scenarioId === "interview" ? "e.g. Software Engineer at a startup"
-              : scenarioId === "presentation" ? "e.g. Climate change & technology"
-              : scenarioId === "group_discussion" ? "e.g. Remote work vs office"
-              : "e.g. Study abroad experiences"
+              scenarioId === "interview" ? "例如：某创业公司的产品经理"
+              : scenarioId === "product_pitch" ? "例如：AI 教育产品"
+              : scenarioId === "elevator_pitch" ? "例如：你的创业项目或产品"
+              : "例如：你想要聊的话题"
             }
             className="w-full rounded-2xl bg-card border border-border/60 px-4 py-3.5 text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all shadow-soft"
           />
@@ -170,11 +170,11 @@ export default function RolePlaySetup() {
           onClick={handleStart}
           className="w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-4 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98]"
         >
-          Start conversation
+          开始对话
           <ChevronRight className="w-4 h-4" />
         </button>
         <p className="text-center text-[11px] text-muted-foreground/50 mt-2">
-          with {selectedName} · {ROLES.find(r => r.id === counterpartRole)?.emoji} {counterpartRole} · {PERSONALITIES.find(p => p.id === personality)?.label}
+          与 {selectedName} · {ROLES.find(r => r.id === counterpartRole)?.emoji} {ROLES.find(r => r.id === counterpartRole)?.label} · {PERSONALITIES.find(p => p.id === personality)?.label}
         </p>
       </div>
     </div>

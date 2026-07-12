@@ -48,14 +48,16 @@ interface CoachingEvent {
 }
 
 const scenarioStarters: Record<string, { title: string; partnerName: string }> = {
-  classmate:        { title: "Meeting a Classmate",   partnerName: "Alex" },
-  party:            { title: "Party Conversation",    partnerName: "Jordan" },
-  networking:       { title: "Networking Event",      partnerName: "Sam" },
-  improv:           { title: "Improv Mode",           partnerName: "Alex" },
-  humor:            { title: "Humor Practice",        partnerName: "Jamie" },
-  interview:        { title: "Job Interview",         partnerName: "Morgan" },
-  presentation:     { title: "Presentation Practice", partnerName: "Alex" },
-  group_discussion: { title: "Group Discussion",      partnerName: "Jordan" },
+  elevator_pitch:    { title: "电梯演讲",     partnerName: "张总" },
+  product_pitch:     { title: "产品路演",     partnerName: "李经理" },
+  interview:         { title: "面试模拟",     partnerName: "王面试官" },
+  improv:            { title: "即兴对话",     partnerName: "教练" },
+  humor:             { title: "幽默练习",     partnerName: "教练" },
+  presentation:      { title: "演讲练习",     partnerName: "教练" },
+  group_discussion:  { title: "小组讨论",     partnerName: "教练" },
+  classmate:         { title: "同学破冰",     partnerName: "教练" },
+  party:             { title: "社交聚会",     partnerName: "教练" },
+  networking:        { title: "行业交流",     partnerName: "教练" },
 };
 
 const Conversation = () => {
@@ -150,7 +152,7 @@ const Conversation = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `speakflow-${scenario.title.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.webm`;
+    a.download = `speakease-${scenario.title.replace(/\s+/g, "-")}-${new Date().toISOString().slice(0, 10)}.webm`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -179,7 +181,7 @@ const Conversation = () => {
       setStatus("idle");
       speakAIReply(opener);
     }).catch(() => {
-      const fallback = `Hi! I'm ${scenario.partnerName}. Nice to meet you!`;
+      const fallback = `你好！我是${scenario.partnerName}。很高兴认识你！`;
       gptHistoryRef.current = [{ role: "assistant", content: fallback }];
       setMessages([{ id: 1, role: "ai", text: fallback }]);
       setStatus("idle");
@@ -272,7 +274,7 @@ const Conversation = () => {
       console.error("GPT error:", err);
       setMessages((prev) => [
         ...prev,
-        { id: prev.length + 1, role: "ai", text: "Sorry, I had trouble responding. Please try again." },
+        { id: prev.length + 1, role: "ai", text: "抱歉，回复出错了，请再试一次。" },
       ]);
     }
 
@@ -286,7 +288,7 @@ const Conversation = () => {
     }
 
     if (!speechSupported) {
-      alert("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      alert("此浏览器不支持语音识别，请使用 Chrome 或 Edge。");
       return;
     }
 
@@ -294,7 +296,7 @@ const Conversation = () => {
     const recognition = new SpeechRecognitionAPI();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = "en-US";
+    recognition.lang = "zh-CN";
 
     let finalTranscript = "";
 
@@ -367,7 +369,7 @@ const Conversation = () => {
           <div className="flex items-center justify-center gap-1.5 mt-0.5">
             <div className={`w-1.5 h-1.5 rounded-full transition-colors ${status === "listening" ? "bg-primary animate-pulse" : status === "thinking" ? "bg-accent animate-pulse" : isSpeaking ? "bg-success animate-pulse" : "bg-muted-foreground/30"}`} />
             <p className="text-[11px] text-muted-foreground font-medium">
-              {status === "listening" ? "Listening…" : status === "thinking" ? `${scenario.partnerName} is thinking…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Your turn"}
+              {status === "listening" ? "正在聆听…" : status === "thinking" ? `${scenario.partnerName}正在思考…` : isSpeaking ? `${scenario.partnerName}正在说话…` : "轮到你了"}
             </p>
             <span className="text-[11px] text-muted-foreground/40">·</span>
             <span className="text-[11px] text-muted-foreground/40 tabular-nums font-medium">{formatTime(sessionDuration)}</span>
@@ -377,7 +379,7 @@ const Conversation = () => {
           onClick={endSession}
           className="text-[12px] font-semibold text-destructive/80 px-3 py-1.5 rounded-full hover:bg-destructive/10 transition-colors"
         >
-          End
+          结束
         </button>
       </div>
 
@@ -391,16 +393,16 @@ const Conversation = () => {
           <p className="text-[14px] font-heading font-semibold text-foreground">{scenario.partnerName}</p>
           <p className="text-[11px] text-muted-foreground">
             {mode === "humor"
-              ? "AI humor coach"
+              ? "AI 幽默教练"
               : rolePlay
               ? `${rolePlay.counterpartRole} · ${rolePlay.personality}`
-              : "AI conversation partner"}
+              : "AI 对话伙伴"}
           </p>
         </div>
         <div className="flex items-center gap-1.5 bg-coaching-soft px-2.5 py-1 rounded-full shadow-glow-coaching">
           <div className="w-1.5 h-1.5 rounded-full bg-coaching animate-pulse" />
           <span className="text-[10px] font-semibold text-coaching uppercase tracking-wider">
-            {mode === "humor" ? "😄 Humor" : "Coach on"}
+            {mode === "humor" ? "😄 幽默" : "教练开"}
           </span>
         </div>
       </div>
@@ -472,7 +474,7 @@ const Conversation = () => {
               <button
                 onClick={endSession}
                 className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-                aria-label="End session"
+                aria-label="结束会话"
               >
                 <Square className="w-4 h-4" />
               </button>
@@ -485,7 +487,7 @@ const Conversation = () => {
                     ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
                     : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
                 }`}
-                aria-label={isListening ? "Stop speaking" : "Start speaking"}
+                aria-label={isListening ? "停止说话" : "开始说话"}
               >
                 {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
               </button>
@@ -504,7 +506,7 @@ const Conversation = () => {
             </div>
 
             <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
-              {isListening ? "Tap when done speaking" : status === "thinking" ? `Waiting for ${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Tap the mic to respond"}
+              {isListening ? "说完后点击" : status === "thinking" ? `等待${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName}正在说话…` : "点击麦克风回应"}
             </p>
           </>
         ) : (
@@ -513,7 +515,7 @@ const Conversation = () => {
               <button
                 onClick={endSession}
                 className="w-11 h-11 shrink-0 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-                aria-label="End session"
+                aria-label="结束会话"
               >
                 <Square className="w-4 h-4" />
               </button>
@@ -523,20 +525,20 @@ const Conversation = () => {
                 onChange={(e) => setTextInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") submitTypedTurn(); }}
                 disabled={status === "thinking" || isSpeaking}
-                placeholder="Type your response…"
+                placeholder="输入你的回答…"
                 className="flex-1 rounded-2xl border-2 border-border/50 bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/60 disabled:opacity-40"
               />
               <button
                 onClick={submitTypedTurn}
                 disabled={status === "thinking" || isSpeaking || !textInput.trim()}
-                aria-label="Send"
+                aria-label="发送"
                 className="w-11 h-11 shrink-0 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow-primary transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Send className="w-4 h-4" />
               </button>
             </div>
             <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
-              {status === "thinking" ? `Waiting for ${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Type and press Enter to respond"}
+              {status === "thinking" ? `等待${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName}正在说话…` : "输入后按回车发送"}
             </p>
           </>
         )}
@@ -551,11 +553,11 @@ const Conversation = () => {
           >
             {inputMode === "voice" ? (
               <>
-                <Keyboard className="w-3.5 h-3.5" /> Type instead
+                <Keyboard className="w-3.5 h-3.5" /> 改用文字输入
               </>
             ) : (
               <>
-                <Mic className="w-3.5 h-3.5" /> Speak instead
+                <Mic className="w-3.5 h-3.5" /> 改用语音输入
               </>
             )}
           </button>

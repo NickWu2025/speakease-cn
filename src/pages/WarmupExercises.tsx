@@ -3,12 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Play, Pause, RotateCcw } from "lucide-react";
 
 const TONGUE_TWISTERS = [
-  { id: 1, difficulty: "easy",   text: "She sells seashells by the seashore.",                              times: 3 },
-  { id: 2, difficulty: "easy",   text: "Peter Piper picked a peck of pickled peppers.",                     times: 3 },
-  { id: 3, difficulty: "medium", text: "How much wood would a woodchuck chuck if a woodchuck could chuck wood?", times: 2 },
-  { id: 4, difficulty: "medium", text: "Red lorry, yellow lorry. Red lorry, yellow lorry.",                 times: 5 },
-  { id: 5, difficulty: "hard",   text: "The sixth sick sheikh's sixth sheep's sick.",                       times: 2 },
-  { id: 6, difficulty: "hard",   text: "Unique New York, unique New York, you know you need unique New York.", times: 3 },
+  { id: 1, difficulty: "easy",   text: "四是四，十是十，十四是十四，四十是四十。",                              times: 3 },
+  { id: 2, difficulty: "easy",   text: "吃葡萄不吐葡萄皮，不吃葡萄倒吐葡萄皮。",                                times: 3 },
+  { id: 3, difficulty: "medium", text: "黑化肥发灰会挥发，灰化肥挥发会发黑。",                                   times: 2 },
+  { id: 4, difficulty: "medium", text: "牛郎恋刘娘，刘娘念牛郎，牛郎牛年恋刘娘。",                                times: 5 },
+  { id: 5, difficulty: "hard",   text: "红鲤鱼与绿鲤鱼与驴。",                                                  times: 2 },
+  { id: 6, difficulty: "hard",   text: "八百标兵奔北坡，炮兵并排北边跑。",                                      times: 3 },
 ] as const;
 
 const DIFFICULTY_CLS = {
@@ -17,20 +17,26 @@ const DIFFICULTY_CLS = {
   hard:   "bg-rose-100 text-rose-700 border-rose-200",
 };
 
+const DIFFICULTY_LABEL = {
+  easy: "简单",
+  medium: "中等",
+  hard: "困难",
+};
+
 const VOCAL_WARMUPS = [
-  { emoji: "🎵", title: "Lip Trill",      desc: "Blow air through relaxed lips making a motorboat sound. Glide up and down your pitch range.",      duration: "20 sec" },
-  { emoji: "🎶", title: "Humming",        desc: "Hum 'mmm' starting low and sliding to high. Feel the buzz in your lips and nose.",                 duration: "20 sec" },
-  { emoji: "🔤", title: "Vowel Slides",   desc: "Say A – E – I – O – U slowly, exaggerating each mouth shape. Repeat 5 times.",                    duration: "30 sec" },
-  { emoji: "😶", title: "Jaw Loosener",   desc: "Chew like you have a big piece of gum. Exaggerate the movement for 15 seconds.",                   duration: "15 sec" },
-  { emoji: "🌬️", title: "Breath Support", desc: "Breathe in for 4 counts, then sustain 'haaah' as long as possible on one controlled breath.",       duration: "30 sec" },
+  { emoji: "🎵", title: "唇颤音",      desc: "放松嘴唇，像摩托车一样发出嗡嗡声，在高低调之间滑动。",      duration: "20 秒" },
+  { emoji: "🎶", title: "哼鸣练习",    desc: '发"嗯"音，从低到高滑动。感受嘴唇和鼻子的震动。',                 duration: "20 秒" },
+  { emoji: "🔤", title: "元音滑动",   desc: '慢慢说"啊—呃—衣—哦—乌"，夸张每个嘴型。重复 5 次。',                    duration: "30 秒" },
+  { emoji: "😶", title: "放松下巴",   desc: "像嚼大块口香糖一样活动下巴。夸张动作 15 秒。",                   duration: "15 秒" },
+  { emoji: "🌬️", title: "气息支撑",   desc: '吸气 4 拍，然后在一口控制好的气息上尽可能长地发出"哈——"。',       duration: "30 秒" },
 ];
 
 type BreathPhase = { label: string; count: number; color: string; scale: number };
 const BREATH_PHASES: BreathPhase[] = [
-  { label: "Inhale",  count: 4, color: "text-blue-500",   scale: 1.18 },
-  { label: "Hold",    count: 4, color: "text-violet-500", scale: 1.18 },
-  { label: "Exhale",  count: 4, color: "text-indigo-500", scale: 0.82 },
-  { label: "Hold",    count: 4, color: "text-slate-500",  scale: 0.82 },
+  { label: "吸气",  count: 4, color: "text-blue-500",   scale: 1.18 },
+  { label: "屏气",  count: 4, color: "text-violet-500", scale: 1.18 },
+  { label: "呼气",  count: 4, color: "text-indigo-500", scale: 0.82 },
+  { label: "屏气",  count: 4, color: "text-slate-500",  scale: 0.82 },
 ];
 
 type Tab = "twisters" | "breathing" | "vocal";
@@ -77,12 +83,12 @@ const WarmupExercises = () => {
           className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors mb-6 -ml-1"
         >
           <ArrowLeft className="w-[18px] h-[18px]" />
-          <span className="text-[13px] font-medium">Warm-up Game</span>
+          <span className="text-[13px] font-medium">热身练习</span>
         </button>
         <h1 className="text-[1.35rem] font-heading font-bold text-foreground">
-          Warm-up Exercises 🎯
+          热身练习 🎯
         </h1>
-        <p className="text-[13px] text-muted-foreground mt-0.5">Loosen up before your conversation</p>
+        <p className="text-[13px] text-muted-foreground mt-0.5">对话前的热身放松</p>
       </div>
 
       {/* Tab bar */}
@@ -96,7 +102,7 @@ const WarmupExercises = () => {
                 tab === t ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {t === "twisters" ? "Twisters" : t === "breathing" ? "Breathing" : "Vocal"}
+              {t === "twisters" ? "绕口令" : t === "breathing" ? "呼吸" : "发声"}
             </button>
           ))}
         </div>
@@ -107,7 +113,7 @@ const WarmupExercises = () => {
         {tab === "twisters" && (
           <>
             <p className="text-[12px] text-muted-foreground">
-              Tap ✓ when done. Try to say each one quickly without stumbling!
+              完成后点击 ✓。尽量快速说完且不卡壳！
             </p>
             {TONGUE_TWISTERS.map((tt) => (
               <div
@@ -141,7 +147,7 @@ const WarmupExercises = () => {
                     </p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide ${DIFFICULTY_CLS[tt.difficulty]}`}>
-                        {tt.difficulty}
+                        {DIFFICULTY_LABEL[tt.difficulty]}
                       </span>
                       <span className="text-[11px] text-muted-foreground">× {tt.times}</span>
                     </div>
@@ -151,8 +157,8 @@ const WarmupExercises = () => {
             ))}
             {done.size === TONGUE_TWISTERS.length && (
               <div className="rounded-2xl bg-green-50 border border-green-100 p-4 text-center">
-                <p className="text-[15px] font-heading font-bold text-green-700">All done! 🎉</p>
-                <p className="text-[12px] text-green-600 mt-1">Your mouth is warmed up and ready to go.</p>
+                <p className="text-[15px] font-heading font-bold text-green-700">全部完成！🎉</p>
+                <p className="text-[12px] text-green-600 mt-1">你的嘴巴已经热好，可以开始练习了。</p>
               </div>
             )}
           </>
@@ -162,8 +168,8 @@ const WarmupExercises = () => {
         {tab === "breathing" && (
           <div className="flex flex-col items-center gap-5 pt-2">
             <p className="text-[13px] text-muted-foreground text-center">
-              Box breathing calms nerves and steadies your voice.<br />
-              Follow the circle — aim for 4 cycles.
+              方框呼吸法有助于平复紧张、稳定声音。<br />
+              跟着圆圈的节奏 — 目标完成 4 个循环。
             </p>
 
             {/* Animated circle */}
@@ -196,7 +202,7 @@ const WarmupExercises = () => {
                   </>
                 ) : (
                   <p className="text-[14px] font-medium text-muted-foreground">
-                    {breathState.cycles > 0 ? `${breathState.cycles} cycle${breathState.cycles > 1 ? "s" : ""}` : "Ready"}
+                    {breathState.cycles > 0 ? `${breathState.cycles} 个循环` : "准备开始"}
                   </p>
                 )}
               </div>
@@ -208,7 +214,7 @@ const WarmupExercises = () => {
                 className="flex items-center gap-2 gradient-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95"
               >
                 {breathRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                {breathRunning ? "Pause" : breathState.cycles > 0 ? "Resume" : "Start"}
+                {breathRunning ? "暂停" : breathState.cycles > 0 ? "继续" : "开始"}
               </button>
               {(breathState.cycles > 0 || breathRunning) && (
                 <button
@@ -223,7 +229,7 @@ const WarmupExercises = () => {
             {/* Phase guide */}
             <div className="w-full rounded-2xl bg-card border border-border/50 p-4">
               <p className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-                Box Breathing (4-4-4-4)
+                方框呼吸法（4-4-4-4）
               </p>
               <div className="flex justify-between">
                 {BREATH_PHASES.map((p, i) => (
@@ -250,9 +256,9 @@ const WarmupExercises = () => {
 
             {breathState.cycles >= 4 && (
               <div className="w-full rounded-2xl bg-green-50 border border-green-100 p-4 text-center">
-                <p className="text-[15px] font-heading font-bold text-green-700">Well done! 🧘</p>
+                <p className="text-[15px] font-heading font-bold text-green-700">做得好！🧘</p>
                 <p className="text-[12px] text-green-600 mt-1">
-                  {breathState.cycles} cycles complete — your voice is steady and ready.
+                  {breathState.cycles} 个循环完成 — 你的声音已经稳定，准备开始。
                 </p>
               </div>
             )}
@@ -263,7 +269,7 @@ const WarmupExercises = () => {
         {tab === "vocal" && (
           <>
             <p className="text-[12px] text-muted-foreground">
-              These exercises warm up your vocal cords and improve tone before speaking.
+              这些练习可以热身你的声带，在说话前改善音质。
             </p>
             {VOCAL_WARMUPS.map((v, i) => (
               <div key={i} className="rounded-2xl bg-card border border-border/50 p-4 shadow-soft">
@@ -283,5 +289,4 @@ const WarmupExercises = () => {
     </div>
   );
 };
-
 export default WarmupExercises;
