@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, CheckCircle2, Sparkles, Mic, MicOff } from "lucide-react";
+import { ChevronRight, CheckCircle2, Sparkles, Mic, MicOff, Keyboard, Send } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { GOALS, CHALLENGES, PROFICIENCY_META, GoalId, ChallengeId } from "@/types/profile";
@@ -62,6 +62,12 @@ export default function Onboarding() {
   );
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
+
+  // ── Text input state ─────────────────────────────────────────────
+  const [inputMode, setInputMode] = useState<"voice" | "text">(
+    () => (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) ? "voice" : "text"
+  );
+  const [textInput, setTextInput] = useState("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -171,6 +177,13 @@ export default function Onboarding() {
     rec.start();
     setIsListening(true);
     setTranscript("");
+  };
+
+  const submitTypedTurn = () => {
+    const text = textInput.trim();
+    if (!text) return;
+    setTextInput("");
+    submitDiagTurn(text);
   };
 
   const submitDiagTurn = async (spokenText: string) => {
@@ -409,44 +422,93 @@ export default function Onboarding() {
               ))}
             </div>
 
-            {/* Voice controls */}
+            {/* Voice / text controls */}
             {diagTurn < 2 ? (
               <div className="pb-4 pt-2 flex flex-col items-center gap-3">
-                {/* Live transcript */}
-                {isListening && (
-                  <div className="w-full flex flex-col items-center gap-2 animate-fade-in">
-                    <VoiceWave active={isListening} />
-                    {transcript && (
-                      <p className="text-[12px] text-muted-foreground text-center max-w-[280px] leading-relaxed italic px-3 py-1.5 bg-muted/40 rounded-xl">
-                        {transcript}
-                      </p>
+                {inputMode === "voice" ? (
+                  <>
+                    {/* Live transcript */}
+                    {isListening && (
+                      <div className="w-full flex flex-col items-center gap-2 animate-fade-in">
+                        <VoiceWave active={isListening} />
+                        {transcript && (
+                          <p className="text-[12px] text-muted-foreground text-center max-w-[280px] leading-relaxed italic px-3 py-1.5 bg-muted/40 rounded-xl">
+                            {transcript}
+                          </p>
+                        )}
+                      </div>
                     )}
+
+                    {/* Status label */}
+                    <p className="text-[12px] text-muted-foreground font-medium">
+                      {isSpeaking
+                        ? "Alex is speaking…"
+                        : isListening
+                        ? "Tap when done speaking"
+                        : diagLoading
+                        ? "Alex is thinking…"
+                        : "Tap the mic to respond"}
+                    </p>
+
+                    {/* Mic button */}
+                    <button
+                      onClick={toggleListening}
+                      disabled={isSpeaking || diagLoading}
+                      className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
+                        isListening
+                          ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
+                          : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
+                      }`}
+                      aria-label={isListening ? "Stop speaking" : "Start speaking"}
+                    >
+                      {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                    </button>
+                  </>
+                ) : (
+                  <div className="w-full flex flex-col items-center gap-2">
+                    <p className="text-[12px] text-muted-foreground font-medium">
+                      {isSpeaking ? "Alex is speaking…" : diagLoading ? "Alex is thinking…" : "Type your response"}
+                    </p>
+                    <div className="w-full flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter") submitTypedTurn(); }}
+                        disabled={isSpeaking || diagLoading}
+                        placeholder="Type your answer…"
+                        className="flex-1 rounded-2xl border-2 border-border/50 bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/60 disabled:opacity-40"
+                      />
+                      <button
+                        onClick={submitTypedTurn}
+                        disabled={isSpeaking || diagLoading || !textInput.trim()}
+                        aria-label="Send"
+                        className="w-11 h-11 shrink-0 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow-primary transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Status label */}
-                <p className="text-[12px] text-muted-foreground font-medium">
-                  {isSpeaking
-                    ? "Alex is speaking…"
-                    : isListening
-                    ? "Tap when done speaking"
-                    : diagLoading
-                    ? "Alex is thinking…"
-                    : "Tap the mic to respond"}
-                </p>
-
-                {/* Mic button */}
+                {/* Mode toggle */}
                 <button
-                  onClick={toggleListening}
+                  onClick={() => {
+                    if (isListening) recognitionRef.current?.stop();
+                    setInputMode((m) => (m === "voice" ? "text" : "voice"));
+                  }}
                   disabled={isSpeaking || diagLoading}
-                  className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isListening
-                      ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
-                      : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
-                  }`}
-                  aria-label={isListening ? "Stop speaking" : "Start speaking"}
+                  className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-primary transition-colors disabled:opacity-40"
                 >
-                  {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  {inputMode === "voice" ? (
+                    <>
+                      <Keyboard className="w-3.5 h-3.5" /> Type instead
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-3.5 h-3.5" /> Speak instead
+                    </>
+                  )}
                 </button>
               </div>
             ) : (

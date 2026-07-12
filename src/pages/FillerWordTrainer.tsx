@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mic, RotateCcw } from "lucide-react";
+import { ArrowLeft, Mic, RotateCcw, Keyboard } from "lucide-react";
 
 // ── Filler word lists ─────────────────────────────────────────────────
 const MULTI_FILLERS = ["you know", "kind of", "sort of", "i mean"];
@@ -67,6 +67,10 @@ const FillerWordTrainer = () => {
   const [finalTranscript, setFinalTranscript] = useState("");
   const [interimText, setInterimText] = useState("");
   const [fillerCounts, setFillerCounts] = useState<Record<string, number>>({});
+  const [mode, setMode] = useState<"voice" | "text">(
+    () => (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) ? "voice" : "text"
+  );
+  const [typedText, setTypedText] = useState("");
   const recognitionRef = useRef<any>(null);
   const phaseRef = useRef<Phase>("idle");
   phaseRef.current = phase;
@@ -152,6 +156,15 @@ const FillerWordTrainer = () => {
     setFinalTranscript("");
     setInterimText("");
     setFillerCounts({});
+    setTypedText("");
+  };
+
+  const analyzeTypedText = () => {
+    const text = typedText.trim();
+    if (!text) return;
+    setFinalTranscript(text);
+    setFillerCounts(countFillers(text));
+    setPhase("done");
   };
 
   const total = totalCount(fillerCounts);
@@ -220,12 +233,46 @@ const FillerWordTrainer = () => {
               </div>
             </div>
 
+            {mode === "voice" ? (
+              <button
+                onClick={startSession}
+                className="gradient-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Mic className="w-4 h-4" />
+                Start 60-Second Challenge
+              </button>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <textarea
+                  value={typedText}
+                  onChange={(e) => setTypedText(e.target.value)}
+                  placeholder="Type or paste what you'd say out loud…"
+                  rows={5}
+                  className="w-full rounded-2xl border-2 border-border/50 bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/60 resize-none"
+                />
+                <button
+                  onClick={analyzeTypedText}
+                  disabled={!typedText.trim()}
+                  className="gradient-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Analyze My Text
+                </button>
+              </div>
+            )}
+
             <button
-              onClick={startSession}
-              className="gradient-primary text-primary-foreground px-8 py-3.5 rounded-full font-semibold shadow-glow-primary hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+              onClick={() => setMode((m) => (m === "voice" ? "text" : "voice"))}
+              className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-primary transition-colors"
             >
-              <Mic className="w-4 h-4" />
-              Start 60-Second Challenge
+              {mode === "voice" ? (
+                <>
+                  <Keyboard className="w-3.5 h-3.5" /> Type instead
+                </>
+              ) : (
+                <>
+                  <Mic className="w-3.5 h-3.5" /> Speak instead
+                </>
+              )}
             </button>
           </>
         )}
@@ -303,7 +350,7 @@ const FillerWordTrainer = () => {
               <p className="text-[13px] mt-1 opacity-80">{score.desc}</p>
               <p className="mt-3 text-[30px] font-heading font-bold">
                 {total}
-                <span className="text-[14px] font-normal opacity-70"> filler{total !== 1 ? "s" : ""} in 60s</span>
+                <span className="text-[14px] font-normal opacity-70"> filler{total !== 1 ? "s" : ""}{mode === "voice" ? " in 60s" : " found"}</span>
               </p>
             </div>
 

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { ArrowLeft, Mic, MicOff, Square, Video, VideoOff } from "lucide-react";
+import { ArrowLeft, Mic, MicOff, Square, Video, VideoOff, Keyboard, Send } from "lucide-react";
 import aiAvatar from "@/assets/ai-avatar.png";
 import CoachingTip, { CoachingLayer, CoachingFlavor } from "@/components/CoachingTip";
 import ChatBubble from "@/components/ChatBubble";
@@ -85,6 +85,10 @@ const Conversation = () => {
   );
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [inputMode, setInputMode] = useState<"voice" | "text">(
+    () => (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) ? "voice" : "text"
+  );
+  const [textInput, setTextInput] = useState("");
 
   const gptHistoryRef = useRef<GPTMessage[]>([]);
   const msgIdRef = useRef(0);
@@ -325,6 +329,13 @@ const Conversation = () => {
     setTranscript("");
   };
 
+  const submitTypedTurn = () => {
+    const text = textInput.trim();
+    if (!text) return;
+    setTextInput("");
+    submitTurn(text);
+  };
+
   const endSession = () => {
     recognitionRef.current?.stop();
     clearInterval(timerRef.current);
@@ -442,57 +453,113 @@ const Conversation = () => {
         </div>
       )}
 
-      {/* Voice Controls */}
+      {/* Voice / Text Controls */}
       <div className="pb-8 pt-3 px-5 glass border-t border-border/30">
-        {isListening && (
-          <div className="flex flex-col items-center gap-2 mb-3 animate-fade-in">
-            <VoiceWave active={isListening} />
-            {transcript && (
-              <p className="text-[12px] text-muted-foreground text-center max-w-[280px] leading-relaxed italic px-3 py-1.5 bg-muted/40 rounded-xl">
-                {transcript}
-              </p>
+        {inputMode === "voice" ? (
+          <>
+            {isListening && (
+              <div className="flex flex-col items-center gap-2 mb-3 animate-fade-in">
+                <VoiceWave active={isListening} />
+                {transcript && (
+                  <p className="text-[12px] text-muted-foreground text-center max-w-[280px] leading-relaxed italic px-3 py-1.5 bg-muted/40 rounded-xl">
+                    {transcript}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+
+            <div className="flex items-center justify-center gap-6">
+              <button
+                onClick={endSession}
+                className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
+                aria-label="End session"
+              >
+                <Square className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={toggleListening}
+                disabled={status === "thinking" || isSpeaking}
+                className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isListening
+                    ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
+                    : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
+                }`}
+                aria-label={isListening ? "Stop speaking" : "Start speaking"}
+              >
+                {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+              </button>
+
+              <button
+                onClick={toggleCamera}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+                  isCameraOn
+                    ? "bg-red-500/15 text-red-500 hover:bg-red-500/25"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                }`}
+                aria-label={isCameraOn ? "关闭摄像头" : "开启摄像头"}
+              >
+                {isCameraOn ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
+              {isListening ? "Tap when done speaking" : status === "thinking" ? `Waiting for ${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Tap the mic to respond"}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={endSession}
+                className="w-11 h-11 shrink-0 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
+                aria-label="End session"
+              >
+                <Square className="w-4 h-4" />
+              </button>
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") submitTypedTurn(); }}
+                disabled={status === "thinking" || isSpeaking}
+                placeholder="Type your response…"
+                className="flex-1 rounded-2xl border-2 border-border/50 bg-card px-4 py-3 text-[14px] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary/60 disabled:opacity-40"
+              />
+              <button
+                onClick={submitTypedTurn}
+                disabled={status === "thinking" || isSpeaking || !textInput.trim()}
+                aria-label="Send"
+                className="w-11 h-11 shrink-0 rounded-full gradient-primary text-primary-foreground flex items-center justify-center shadow-glow-primary transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
+              {status === "thinking" ? `Waiting for ${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Type and press Enter to respond"}
+            </p>
+          </>
         )}
 
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex justify-center mt-2">
           <button
-            onClick={endSession}
-            className="w-11 h-11 rounded-full bg-muted/60 flex items-center justify-center text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all"
-            aria-label="End session"
+            onClick={() => {
+              if (isListening) recognitionRef.current?.stop();
+              setInputMode((m) => (m === "voice" ? "text" : "voice"));
+            }}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-primary transition-colors"
           >
-            <Square className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={toggleListening}
-            disabled={status === "thinking" || isSpeaking}
-            className={`w-[64px] h-[64px] rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed ${
-              isListening
-                ? "gradient-primary text-primary-foreground shadow-glow-primary animate-listening-glow"
-                : "bg-card border-2 border-primary/30 text-primary hover:border-primary/60 shadow-soft animate-mic-breathe"
-            }`}
-            aria-label={isListening ? "Stop speaking" : "Start speaking"}
-          >
-            {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-          </button>
-
-          <button
-            onClick={toggleCamera}
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-              isCameraOn
-                ? "bg-red-500/15 text-red-500 hover:bg-red-500/25"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted"
-            }`}
-            aria-label={isCameraOn ? "关闭摄像头" : "开启摄像头"}
-          >
-            {isCameraOn ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+            {inputMode === "voice" ? (
+              <>
+                <Keyboard className="w-3.5 h-3.5" /> Type instead
+              </>
+            ) : (
+              <>
+                <Mic className="w-3.5 h-3.5" /> Speak instead
+              </>
+            )}
           </button>
         </div>
-
-        <p className="text-center text-[11px] text-muted-foreground/70 mt-2.5 font-medium">
-          {isListening ? "Tap when done speaking" : status === "thinking" ? `Waiting for ${scenario.partnerName}…` : isSpeaking ? `${scenario.partnerName} is speaking…` : "Tap the mic to respond"}
-        </p>
       </div>
     </div>
   );
