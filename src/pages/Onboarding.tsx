@@ -238,6 +238,25 @@ export default function Onboarding() {
     navigate("/");
   };
 
+  // ── Skip onboarding ──────────────────────────────────────────
+  const handleSkip = () => {
+    const userStr = localStorage.getItem("speakflow_user");
+    if (!userStr) return;
+    const user = JSON.parse(userStr);
+    const skipProfile = {
+      onboardingCompleted: true,
+      proficiencyLevel: "intermediate",
+      goals: ["presentation"],
+      challenges: [],
+      strengths: [],
+      areasToImprove: [],
+      recommendedScenarios: ["elevator_pitch"],
+      coachNote: "用户跳过了 onboarding",
+    };
+    localStorage.setItem(`speakflow_profile_${user.id}`, JSON.stringify(skipProfile));
+    navigate("/");
+  };
+
   // ── Render ────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen gradient-warm flex flex-col max-w-md mx-auto">
@@ -301,13 +320,21 @@ export default function Onboarding() {
               })}
             </div>
 
-            <button
-              disabled={selectedGoals.length === 0}
-              onClick={() => setStep(2)}
-              className="mt-6 w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-4 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              继续 <ChevronRight className="w-4 h-4" />
-            </button>
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                onClick={handleSkip}
+                className="text-[13px] text-muted-foreground hover:text-foreground transition-colors font-medium"
+              >
+                跳过
+              </button>
+              <button
+                disabled={selectedGoals.length === 0}
+                onClick={() => setStep(2)}
+                className="flex-1 ml-4 flex items-center justify-center gap-2 rounded-2xl gradient-primary px-5 py-4 text-[15px] font-semibold text-primary-foreground shadow-glow-primary transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                继续 <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
 

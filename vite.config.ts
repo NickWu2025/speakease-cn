@@ -11,6 +11,13 @@ export default defineConfig(({ mode }) => ({
     hmr: {
       overlay: false,
     },
+    proxy: {
+      '/api/ark': {
+        target: 'https://ark.cn-beijing.volces.com/api/v3',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/ark/, ''),
+      },
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {

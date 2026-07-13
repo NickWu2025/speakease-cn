@@ -253,3 +253,46 @@
 .stagger-4 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both; }
 .stagger-5 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both; }
 .stagger-6 { animation: stagger-fade 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both; }
+
+/* ── Brand gradient refinements ── */
+@layer utilities {
+  .gradient-brand {
+    background: linear-gradient(135deg, hsl(14, 80%, 56%) 0%, hsl(270, 50%, 55%) 100%);
+  }
+  .gradient-brand-soft {
+    background: linear-gradient(135deg, hsl(14, 80%, 97%) 0%, hsl(270, 50%, 97%) 100%);
+  }
+  .gradient-brand-text {
+    background: linear-gradient(135deg, hsl(14, 80%, 56%) 0%, hsl(270, 50%, 55%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* ── Micro-interactions ── */
+@layer base {
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); max-height: 0; }
+    to { opacity: 1; transform: translateY(0); max-height: 500px; }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out forwards;
+  }
+  .animate-slide-up {
+    animation: slide-up 0.3s ease-out forwards;
+  }
+}

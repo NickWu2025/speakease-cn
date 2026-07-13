@@ -7,6 +7,7 @@ import ChatBubble from "@/components/ChatBubble";
 import VoiceWave from "@/components/VoiceWave";
 import { getConversationReply, generateOpener, speakText, GPTMessage, CoachingDimension } from "@/lib/gpt";
 import { RolePlayConfig } from "@/types/roleplay";
+import { XfyunRecognizer, hasXfyunConfig, getXfyunConfig } from "@/lib/xfyunASR";
 
 // Web Speech API type declarations
 interface ISpeechRecognition extends EventTarget {
@@ -35,8 +36,9 @@ declare global {
 
 interface Message {
   id: number;
-  role: "user" | "ai";
+  role: "user" | "ai" | "system";
   text: string;
+  image?: string;
 }
 
 interface CoachingEvent {
@@ -83,19 +85,23 @@ const Conversation = () => {
   const [transcript, setTranscript] = useState("");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechSupported] = useState(
-    () => typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)
+    () => typeof window !== "undefined" && (hasXfyunConfig() || "SpeechRecognition" in window || "webkitSpeechRecognition" in window)
   );
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [inputMode, setInputMode] = useState<"voice" | "text">(
-    () => (typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window)) ? "voice" : "text"
+    () => (typeof window !== "undefined" && (hasXfyunConfig() || "SpeechRecognition" in window || "webkitSpeechRecognition" in window)) ? "voice" : "text"
   );
   const [textInput, setTextInput] = useState("");
+  const [capturedFrames, setCapturedFrames] = useState<string[]>([]);
+  const [frameTimestamps, setFrameTimestamps] = useState<{ time: number; frameIndex: number }[]>([]);
+  const [speechTimeLeft, setSpeechTimeLeft] = useState<number | null>(null);
 
   const gptHistoryRef = useRef<GPTMessage[]>([]);
   const msgIdRef = useRef(0);
   const nextMsgId = () => { msgIdRef.current += 1; return msgIdRef.current; };
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
+  const xfyunRecognizerRef = useRef<XfyunRecognizer | null>(null);
   const ttsAbortRef = useRef<AbortController | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>();
@@ -103,6 +109,9 @@ const Conversation = () => {
   const cameraStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const captureIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isSubmittingRef = useRef(false);
+  const speechTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startCamera = async () => {
     try {
@@ -110,6 +119,7 @@ const Conversation = () => {
       cameraStreamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
       }
       setIsCameraOn(true);
 
@@ -122,6 +132,30 @@ const Conversation = () => {
       recorder.start(1000);
       mediaRecorderRef.current = recorder;
       setIsRecording(true);
+
+      // Start frame capture every 5s
+      captureIntervalRef.current = setInterval(() => {
+        try {
+          const v = videoRef.current;
+          if (!v || v.videoWidth === 0) return;
+          const canvas = document.createElement("canvas");
+          canvas.width = v.videoWidth;
+          canvas.height = v.videoHeight;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+          const frame = canvas.toDataURL("image/jpeg", 0.6).split(",")[1];
+          if (!frame || frame.length < 100) {
+            console.log("[截图] 帧数据为空或太小");
+            return;
+          }
+          console.log("[截图] 捕获帧, 长度:", frame.length);
+          setCapturedFrames((prev) => [...prev, frame]);
+          setFrameTimestamps((prev) => [...prev, { time: sessionDuration, frameIndex: prev.length }]);
+        } catch (e) {
+          console.error("[截图] 捕获失败:", e);
+        }
+      }, 5000);
     } catch (err) {
       console.error("Camera access denied:", err);
       alert("无法访问摄像头，请检查浏览器权限设置。");
@@ -129,6 +163,10 @@ const Conversation = () => {
   };
 
   const stopCamera = () => {
+    if (captureIntervalRef.current) {
+      clearInterval(captureIntervalRef.current);
+      captureIntervalRef.current = null;
+    }
     mediaRecorderRef.current?.stop();
     mediaRecorderRef.current = null;
     cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -171,26 +209,42 @@ const Conversation = () => {
     }
   };
 
+  // Fix: bind srcObject when video element mounts after isCameraOn becomes true
+  useEffect(() => {
+    if (isCameraOn && videoRef.current && cameraStreamRef.current) {
+      videoRef.current.srcObject = cameraStreamRef.current;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isCameraOn]);
+
   useEffect(() => {
     timerRef.current = setInterval(() => setSessionDuration((d) => d + 1), 1000);
     // Generate a fresh random opener each session
     setStatus("thinking");
     generateOpener(scenarioId, scenario.partnerName, rolePlay).then((opener) => {
+      const openerId = nextMsgId();
       gptHistoryRef.current = [{ role: "assistant", content: opener }];
-      setMessages([{ id: 1, role: "ai", text: opener }]);
+      setMessages([{ id: openerId, role: "ai", text: opener }]);
       setStatus("idle");
       speakAIReply(opener);
+      // Auto-start camera after opener is ready
+      startCamera();
     }).catch(() => {
       const fallback = `你好！我是${scenario.partnerName}。很高兴认识你！`;
+      const fallbackId = nextMsgId();
       gptHistoryRef.current = [{ role: "assistant", content: fallback }];
-      setMessages([{ id: 1, role: "ai", text: fallback }]);
+      setMessages([{ id: fallbackId, role: "ai", text: fallback }]);
       setStatus("idle");
+      startCamera();
     });
     return () => {
       clearInterval(timerRef.current);
       ttsAbortRef.current?.abort();
       mediaRecorderRef.current?.stop();
       cameraStreamRef.current?.getTracks().forEach((t) => t.stop());
+      if (captureIntervalRef.current) clearInterval(captureIntervalRef.current);
+      if (speechTimerRef.current) { clearInterval(speechTimerRef.current); speechTimerRef.current = null; }
+      if (xfyunRecognizerRef.current) { xfyunRecognizerRef.current.stop(); xfyunRecognizerRef.current = null; }
     };
   }, []);
 
@@ -201,22 +255,21 @@ const Conversation = () => {
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   const submitTurn = async (userText: string) => {
-    if (!userText.trim()) {
+    if (!userText.trim() || isSubmittingRef.current) {
       setIsListening(false);
       setStatus("idle");
       return;
     }
+    isSubmittingRef.current = true;
 
     const trimmed = userText.trim();
     setTranscript("");
     setStatus("thinking");
     setIsListening(false);
 
-    // Capture a stable id before the state update so coaching can reference it reliably
     const userMsgId = nextMsgId();
     setMessages((prev) => [...prev, { id: userMsgId, role: "user", text: trimmed }]);
 
-    // Add user message to GPT history
     gptHistoryRef.current = [
       ...gptHistoryRef.current,
       { role: "user", content: trimmed },
@@ -231,15 +284,15 @@ const Conversation = () => {
         rolePlay
       );
 
-      // Add AI reply to GPT history
       gptHistoryRef.current = [
         ...gptHistoryRef.current,
         { role: "assistant", content: result.reply },
       ];
 
+      const aiMsgId = nextMsgId();
       setMessages((prev) => [
         ...prev,
-        { id: prev.length + 1, role: "ai", text: result.reply },
+        { id: aiMsgId, role: "ai", text: result.reply },
       ]);
 
       speakAIReply(result.reply);
@@ -270,25 +323,78 @@ const Conversation = () => {
           },
         ]);
       }
-    } catch (err) {
-      console.error("GPT error:", err);
+    } catch (err: any) {
+      console.error("GPT error:", err?.message ?? err);
+      const aiMsgId = nextMsgId();
       setMessages((prev) => [
         ...prev,
-        { id: prev.length + 1, role: "ai", text: "抱歉，回复出错了，请再试一次。" },
+        { id: aiMsgId, role: "ai", text: "抱歉，回复出错了，请再试一次。" },
       ]);
+    } finally {
+      isSubmittingRef.current = false;
+      setStatus("idle");
     }
-
-    setStatus("idle");
   };
 
   const toggleListening = () => {
     if (isListening) {
+      if (speechTimerRef.current) { clearInterval(speechTimerRef.current); speechTimerRef.current = null; }
+      setSpeechTimeLeft(null);
+      if (xfyunRecognizerRef.current) {
+        xfyunRecognizerRef.current.stop();
+        xfyunRecognizerRef.current = null;
+        return;
+      }
       recognitionRef.current?.stop();
       return;
     }
 
     if (!speechSupported) {
       alert("此浏览器不支持语音识别，请使用 Chrome 或 Edge。");
+      return;
+    }
+
+    if (hasXfyunConfig()) {
+      const recognizer = new XfyunRecognizer(getXfyunConfig(), {
+        onResult: (text) => {
+          setTranscript(text);
+        },
+        onError: (err) => {
+          console.error("讯飞识别错误:", err);
+          xfyunRecognizerRef.current = null;
+          setIsListening(false);
+          setStatus("idle");
+          if (speechTimerRef.current) { clearInterval(speechTimerRef.current); speechTimerRef.current = null; }
+          setSpeechTimeLeft(null);
+        },
+        onEnd: (finalText) => {
+          xfyunRecognizerRef.current = null;
+          setIsListening(false);
+          if (speechTimerRef.current) { clearInterval(speechTimerRef.current); speechTimerRef.current = null; }
+          setSpeechTimeLeft(null);
+          submitTurn(finalText);
+        },
+      });
+      xfyunRecognizerRef.current = recognizer;
+      setIsListening(true);
+      setStatus("listening");
+      setTranscript("");
+      setSpeechTimeLeft(55);
+      recognizer.start();
+      // 55-second countdown for xfyun session limit
+      speechTimerRef.current = setInterval(() => {
+        setSpeechTimeLeft((prev) => {
+          if (prev === null || prev <= 1) {
+            if (speechTimerRef.current) { clearInterval(speechTimerRef.current); speechTimerRef.current = null; }
+            // Auto-stop at 0
+            if (xfyunRecognizerRef.current) {
+              xfyunRecognizerRef.current.stop();
+            }
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
       return;
     }
 
@@ -339,7 +445,7 @@ const Conversation = () => {
   };
 
   const endSession = () => {
-    recognitionRef.current?.stop();
+    if (xfyunRecognizerRef.current) { xfyunRecognizerRef.current.stop(); xfyunRecognizerRef.current = null; } else { recognitionRef.current?.stop(); }
     clearInterval(timerRef.current);
     if (isCameraOn) {
       // Stop recorder, wait for final chunks, then save
@@ -353,6 +459,8 @@ const Conversation = () => {
         messages,
         mode,
         duration: sessionDuration,
+        capturedFrames,
+        frameTimestamps,
       },
     });
   };
@@ -369,7 +477,15 @@ const Conversation = () => {
           <div className="flex items-center justify-center gap-1.5 mt-0.5">
             <div className={`w-1.5 h-1.5 rounded-full transition-colors ${status === "listening" ? "bg-primary animate-pulse" : status === "thinking" ? "bg-accent animate-pulse" : isSpeaking ? "bg-success animate-pulse" : "bg-muted-foreground/30"}`} />
             <p className="text-[11px] text-muted-foreground font-medium">
-              {status === "listening" ? "正在聆听…" : status === "thinking" ? `${scenario.partnerName}正在思考…` : isSpeaking ? `${scenario.partnerName}正在说话…` : "轮到你了"}
+              {status === "listening"
+                ? speechTimeLeft !== null
+                  ? `正在聆听… · ${speechTimeLeft}s`
+                  : "正在聆听…"
+                : status === "thinking"
+                ? `${scenario.partnerName}正在思考…`
+                : isSpeaking
+                ? `${scenario.partnerName}正在说话…`
+                : "轮到你了"}
             </p>
             <span className="text-[11px] text-muted-foreground/40">·</span>
             <span className="text-[11px] text-muted-foreground/40 tabular-nums font-medium">{formatTime(sessionDuration)}</span>
@@ -454,6 +570,8 @@ const Conversation = () => {
           )}
         </div>
       )}
+
+
 
       {/* Voice / Text Controls */}
       <div className="pb-8 pt-3 px-5 glass border-t border-border/30">

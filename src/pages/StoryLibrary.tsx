@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, BookOpen, Search, Plus, Trash2, ChevronRight } from "lucide-react";
+import { ArrowLeft, BookOpen, Search, Plus, Trash2, ChevronRight, Mic, MicOff } from "lucide-react";
+import { XfyunRecognizer, hasXfyunConfig, getXfyunConfig } from "@/lib/xfyunASR";
 import { useAuth } from "@/contexts/AuthContext";
 import { Story, TAG_CONFIG } from "@/types/story";
-import { loadStories, deleteStory } from "@/lib/storyStore";
+import { loadStories, deleteStory, saveStory } from "@/lib/storyStore";
 
 const StoryLibrary = () => {
   const navigate = useNavigate();
@@ -11,6 +12,69 @@ const StoryLibrary = () => {
   const [stories, setStories] = useState<Story[]>([]);
   const [search, setSearch] = useState("");
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newContent, setNewContent] = useState("");
+  const [isVoiceInput, setIsVoiceInput] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const voiceRecognizerRef = useRef<XfyunRecognizer | null>(null);
+
+
+  const toggleVoiceInput = () => {
+    if (isVoiceInput) {
+      if (voiceRecognizerRef.current) {
+        voiceRecognizerRef.current.stop();
+        voiceRecognizerRef.current = null;
+      }
+      setIsVoiceInput(false);
+      return;
+    }
+
+    if (!hasXfyunConfig()) {
+      alert("未配置语音识别，请使用文字输入。");
+      return;
+    }
+
+    const recognizer = new XfyunRecognizer(getXfyunConfig(), {
+      onResult: (text) => {
+        setVoiceTranscript(text);
+      },
+      onError: (err) => {
+        console.error("故事语音输入错误:", err);
+        voiceRecognizerRef.current = null;
+        setIsVoiceInput(false);
+      },
+      onEnd: (finalText) => {
+        voiceRecognizerRef.current = null;
+        setIsVoiceInput(false);
+        setNewContent((prev) => (prev ? prev + "\n" + finalText : finalText));
+        setVoiceTranscript("");
+      },
+    });
+    voiceRecognizerRef.current = recognizer;
+    setIsVoiceInput(true);
+    setVoiceTranscript("");
+    recognizer.start();
+  };
+
+  const handleAddStory = () => {
+    if (!user || !newTitle.trim() || !newContent.trim()) return;
+    const story: Story = {
+      id: `manual_${Date.now()}`,
+      title: newTitle.trim(),
+      raw: newContent.trim(),
+      summary: newContent.trim().slice(0, 120) + (newContent.trim().length > 120 ? "…" : ""),
+      tags: ["personal"],
+      extractedAt: new Date().toISOString(),
+      versions: {},
+      thread: [],
+    };
+    saveStory(user.id, story);
+    setStories(loadStories(user.id));
+    setNewTitle("");
+    setNewContent("");
+    setShowAddForm(false);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -77,6 +141,54 @@ const StoryLibrary = () => {
           />
         </div>
 
+        {/* Add Story Button + Inline Form */}
+        <button
+          onClick={() => setShowAddForm(!showAddForm)}
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary/8 border border-primary/15 px-4 py-2.5 text-[13px] font-semibold text-primary hover:bg-primary/12 transition-all active:scale-[0.98]"
+        >
+          <Plus className="w-4 h-4" />
+          {showAddForm ? "取消" : "手动添加故事"}
+        </button>
+
+        {showAddForm && (
+          <div className="space-y-3 p-4 rounded-2xl bg-card border border-border/50 shadow-soft animate-slide-up">
+            <input
+              type="text"
+              placeholder="给这个故事起个标题"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="w-full rounded-xl bg-muted/40 border border-border/50 px-4 py-2.5 text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30"
+            />
+            <div className="relative">
+              <textarea
+                placeholder="把你的故事写下来 — 尽量完整，AI 会帮你用 STAR 框架分析结构…"
+                value={isVoiceInput ? voiceTranscript : newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                rows={5}
+                className="w-full rounded-xl bg-muted/40 border border-border/50 px-4 py-2.5 pr-12 text-[14px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 resize-none leading-relaxed"
+              />
+              <button
+                onClick={toggleVoiceInput}
+                className={`absolute bottom-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                  isVoiceInput
+                    ? "bg-rose-500 text-white animate-pulse"
+                    : "bg-primary/10 text-primary hover:bg-primary/20"
+                }`}
+                title={isVoiceInput ? "停止录音" : "语音输入"}
+              >
+                {isVoiceInput ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+              </button>
+            </div>
+            <button
+              onClick={handleAddStory}
+              disabled={!newTitle.trim() || !newContent.trim()}
+              className="w-full rounded-xl gradient-primary text-primary-foreground py-2.5 text-[14px] font-semibold shadow-glow-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+            >
+              保存故事
+            </button>
+          </div>
+        )}
+
         {/* Tag filters */}
         {allTags.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -124,13 +236,21 @@ const StoryLibrary = () => {
                     故事会在每次练习结束后自动从对话中提取。
                   </p>
                 </div>
-                <button
-                  onClick={() => navigate("/scenarios")}
-                  className="gradient-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold shadow-glow-primary text-[13px] flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  开始对话
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-secondary text-secondary-foreground px-5 py-2.5 rounded-full font-semibold text-[13px] flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    手动添加
+                  </button>
+                  <button
+                    onClick={() => navigate("/scenarios")}
+                    className="gradient-primary text-primary-foreground px-6 py-2.5 rounded-full font-semibold shadow-glow-primary text-[13px] flex items-center gap-2"
+                  >
+                    开始对话
+                  </button>
+                </div>
               </>
             ) : (
               <p className="text-[13px] text-muted-foreground">没有找到匹配的故事。</p>

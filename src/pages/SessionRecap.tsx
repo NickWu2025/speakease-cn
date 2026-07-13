@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Sparkles, Lightbulb, RotateCcw, Loader2, TrendingUp, CheckCircle2, BookOpen } from "lucide-react";
-import { analyzeSession, RecapAnalysis, CoachingDimension, DimensionFeedback } from "@/lib/gpt";
+import { ArrowLeft, Sparkles, Lightbulb, RotateCcw, Loader2, TrendingUp, CheckCircle2, BookOpen, ChevronRight } from "lucide-react";
+import { analyzeSession, RecapAnalysis, CoachingDimension, DimensionFeedback, analyzeBodyLanguage, BodyLanguageAnalysis } from "@/lib/gpt";
 import { extractStories } from "@/lib/storyAI";
 import { saveStory } from "@/lib/storyStore";
 import { saveSessionRecord } from "@/lib/sessionStore";
@@ -100,16 +100,21 @@ const SessionRecap = () => {
     mode?: string;
     duration?: number;
     messages?: { role: "user" | "ai"; text: string }[];
+    capturedFrames?: string[];
+    frameTimestamps?: { time: number; frameIndex: number }[];
   } | null;
 
   const scenarioTitle = state?.scenario || "练习记录";
   const duration = state?.duration || 0;
   const messages = state?.messages ?? [];
+  const capturedFrames = state?.capturedFrames;
 
   const [analysis, setAnalysis] = useState<RecapAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [savedStoryCount, setSavedStoryCount] = useState(0);
+  const [bodyLang, setBodyLang] = useState<BodyLanguageAnalysis | null>(null);
+  const [bodyLangLoading, setBodyLangLoading] = useState(false);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -147,6 +152,15 @@ const SessionRecap = () => {
           if (stories.length > 0) setSavedStoryCount(stories.length);
         })
         .catch((err) => console.error("Story extraction:", err));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (capturedFrames && capturedFrames.length > 0 && !bodyLang && !bodyLangLoading) {
+      setBodyLangLoading(true);
+      analyzeBodyLanguage(capturedFrames[capturedFrames.length - 1], scenarioTitle ?? "")
+        .then(setBodyLang)
+        .finally(() => setBodyLangLoading(false));
     }
   }, []);
 
@@ -189,16 +203,130 @@ const SessionRecap = () => {
           </div>
         ) : (
           <>
-            {/* ── 3 Dimension cards ── */}
+            {/* ── Score Overview ── */}
             {analysis?.dimensions && (
-              <div className="stagger-2 space-y-3">
-                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  教练分析
+              <div className="stagger-2 rounded-2xl surface-elevated p-5 border border-border/50">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                  本次评分总览
                 </p>
-                {(["content", "structure", "delivery"] as CoachingDimension[]).map((dim) => (
-                  <DimensionCard key={dim} dim={dim} feedback={analysis.dimensions[dim]} />
-                ))}
+                <div className="grid grid-cols-3 gap-3">
+                  {(["content", "structure", "delivery"] as CoachingDimension[]).map((dim) => {
+                    const cfg = DIMENSION_CONFIG[dim];
+                    const feedback = analysis!.dimensions[dim];
+                    const ratingScore = feedback.rating === "strong" ? 90 : feedback.rating === "developing" ? 65 : 35;
+                    const ratingLabel = feedback.rating === "strong" ? "优秀" : feedback.rating === "developing" ? "成长中" : "待提升";
+                    const ratingColor = feedback.rating === "strong" ? "text-green-600" : feedback.rating === "developing" ? "text-amber-600" : "text-rose-600";
+                    return (
+                      <div key={dim} className="text-center">
+                        <div className="relative w-16 h-16 mx-auto mb-2">
+                          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                            <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-muted/30" />
+                            <circle
+                              cx="18" cy="18" r="15.5" fill="none"
+                              stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                              strokeDasharray={`${ratingScore * 0.974} 97.4`}
+                              className={ratingColor}
+                              style={{ transition: "stroke-dasharray 0.8s ease" }}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-lg font-heading font-bold text-foreground">{ratingScore}</span>
+                          </div>
+                        </div>
+                        <p className="text-[12px] font-semibold text-foreground">{cfg.emoji} {cfg.label}</p>
+                        <p className={`text-[11px] font-medium ${ratingColor}`}>{ratingLabel}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ── Captured Frames (always show if available) ── */}
+                {capturedFrames && capturedFrames.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      练习截图
+                    </p>
+                    <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+                      {capturedFrames.slice(-3).map((frame, i) => (
+                        <div key={i} className="shrink-0 rounded-lg overflow-hidden border border-border/40 shadow-sm" style={{ width: 80, height: 60 }}>
+                          <img 
+                            src={`data:image/jpeg;base64,${frame}`}
+                            alt={`分析帧 ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Body Language Analysis ── */}
+                {bodyLang && (
+                  <div className="mt-4 pt-4 border-t border-border/30">
+                    <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      肢体语言分析
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: "自信度", value: bodyLang.confidence, color: "text-violet-600" },
+                        { label: "眼神", value: bodyLang.eyeContact, color: "text-blue-600" },
+                        { label: "手势", value: bodyLang.gestures, color: "text-amber-600" },
+                        { label: "姿态", value: bodyLang.posture, color: "text-green-600" },
+                      ].map((item) => (
+                        <div key={item.label} className="text-center">
+                          <div className="relative w-14 h-14 mx-auto mb-1">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                              <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-muted/20" />
+                              <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"
+                                strokeDasharray={`${item.value * 0.974} 97.4`}
+                                className={item.color}
+                                style={{ transition: "stroke-dasharray 0.8s ease" }}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-sm font-bold text-foreground">{item.value}</span>
+                            </div>
+                          </div>
+                          <p className="text-[10px] font-medium text-foreground">{item.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[12px] text-foreground mt-3 leading-relaxed">{bodyLang.overall}</p>
+                    {bodyLang.suggestions.length > 0 && (
+                      <ul className="mt-2 space-y-1">
+                        {bodyLang.suggestions.map((s, i) => (
+                          <li key={i} className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+                            <span className="text-primary mt-0.5">•</span>
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+
+                {bodyLangLoading && (
+                  <div className="mt-4 pt-4 border-t border-border/30 flex items-center gap-2 text-[12px] text-muted-foreground">
+                    <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                    正在分析肢体语言…
+                  </div>
+                )}
               </div>
+            )}
+
+            {/* ── Detailed Analysis (collapsed) ── */}
+            {analysis?.dimensions && (
+              <details className="stagger-3 group">
+                <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5 list-none">
+                  <span>详细分析</span>
+                  <ChevronRight className="w-3 h-3 transition-transform group-open:rotate-90" />
+                </summary>
+                <div className="space-y-3 mt-2">
+                  {(["content", "structure", "delivery"] as CoachingDimension[]).map((dim) => (
+                    <DimensionCard key={dim} dim={dim} feedback={analysis.dimensions[dim]} />
+                  ))}
+                </div>
+              </details>
             )}
 
             {/* ── Coaching moments ── */}

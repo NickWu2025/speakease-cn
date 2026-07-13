@@ -42,7 +42,7 @@ const Home = () => {
             )}
           </div>
           <div>
-            <p className="text-[11px] text-muted-foreground font-medium">欢迎回来</p>
+            <p className="text-[11px] text-muted-foreground font-medium">继续练习</p>
             <h1 className="text-[17px] font-heading font-bold text-foreground leading-tight">{firstName} 👋</h1>
           </div>
         </div>
@@ -69,8 +69,8 @@ const Home = () => {
       {/* Recommended (if profile has recommendations) */}
       {profile?.recommendedScenarios?.length > 0 && (
         <div className="px-5 mb-2">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">为你推荐</p>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">推荐练习</p>
+          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
             {profile.recommendedScenarios.slice(0, 3).map((scenId) => {
               const cfg = SCENARIO_CONFIG[scenId as keyof typeof SCENARIO_CONFIG];
               if (!cfg) return null;
@@ -78,9 +78,13 @@ const Home = () => {
                 <button
                   key={scenId}
                   onClick={() => navigate(cfg.path)}
-                  className="shrink-0 flex items-center gap-2 rounded-xl bg-primary/10 border border-primary/20 px-3.5 py-2 text-[13px] font-medium text-primary hover:bg-primary/15 transition-all"
+                  className="shrink-0 flex items-center gap-3 rounded-2xl bg-card border border-border/50 px-4 py-3.5 hover:shadow-md transition-all active:scale-[0.98] text-left"
                 >
-                  <span>{cfg.emoji}</span> {cfg.label}
+                  <span className="text-xl">{cfg.emoji}</span>
+                  <div>
+                    <p className="text-[13px] font-semibold text-foreground">{cfg.label}</p>
+                    <p className="text-[11px] text-muted-foreground">点击开始 →</p>
+                  </div>
                 </button>
               );
             })}
@@ -110,6 +114,20 @@ const Home = () => {
             <ChevronRight className="w-5 h-5 text-primary-foreground/50 group-hover:translate-x-0.5 transition-transform" />
           </div>
         </button>
+
+        {/* Quick access scenarios */}
+        <div className="grid grid-cols-3 gap-2">
+          {Object.entries(SCENARIO_CONFIG).map(([key, cfg]) => (
+            <button
+              key={key}
+              onClick={(e) => { e.stopPropagation(); navigate(cfg.path); }}
+              className="flex flex-col items-center gap-1.5 rounded-2xl bg-card border border-border/50 p-3 hover:shadow-md transition-all active:scale-[0.97]"
+            >
+              <span className="text-2xl">{cfg.emoji}</span>
+              <span className="text-[12px] font-medium text-foreground">{cfg.label}</span>
+            </button>
+          ))}
+        </div>
 
         <button
           onClick={() => navigate("/stories")}

@@ -27,3 +27,5 @@ bun.lockb
 *.sln
 *.sw?
 speakflow-your-ai-conversation-coach/
+.env
+api/
