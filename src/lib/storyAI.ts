@@ -3,7 +3,8 @@ import { Story, StoryTone, StoryMessage } from "@/types/story";
 import { SessionRecord, RATING_SCORE } from "@/lib/sessionStore";
 
 const client = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? "",
+  apiKey: import.meta.env.VITE_DOUBAO_API_KEY ?? "",
+  baseURL: "https://ark.cn-beijing.volces.com/api/v3",
   dangerouslyAllowBrowser: true,
 });
 
@@ -25,7 +26,7 @@ export async function extractStories(
     .join("\n");
 
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "ep-20260713140908-gltxz",
     messages: [
       {
         role: "system",
@@ -83,7 +84,7 @@ const TONE_INSTRUCTIONS: Record<StoryTone, string> = {
 
 export async function refineStory(raw: string, title: string, tone: StoryTone): Promise<string> {
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "ep-20260713140908-gltxz",
     messages: [
       {
         role: "system",
@@ -133,7 +134,7 @@ ${story.raw}
   if (!isOpener && userMessage) history.push({ role: "user", content: userMessage });
 
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "ep-20260713140908-gltxz",
     messages: [
       { role: "system", content: systemPrompt },
       ...(isOpener
@@ -171,7 +172,7 @@ export async function generateProgressReport(
   ).join("\n");
 
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: "ep-20260713140908-gltxz",
     messages: [
       {
         role: "system",

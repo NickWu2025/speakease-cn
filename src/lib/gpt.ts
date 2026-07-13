@@ -1,9 +1,17 @@
 import OpenAI from "openai";
 import { RolePlayConfig, PERSONALITY_DESC, CULTURE_DESC } from "@/types/roleplay";
 
+// Doubao (Volcengine Ark) client for chat completions
+const doubaoClient = new OpenAI({
+  apiKey: import.meta.env.VITE_DOUBAO_API_KEY ?? "",
+  baseURL: "https://ark.cn-beijing.volces.com/api/v3",
+  dangerouslyAllowBrowser: true, // demo only — move to backend for production
+});
+
+// OpenAI client for TTS fallback
 const client = new OpenAI({
   apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? "",
-  dangerouslyAllowBrowser: true, // demo only — move to backend for production
+  dangerouslyAllowBrowser: true,
 });
 
 export interface GPTMessage {
@@ -164,8 +172,8 @@ export async function generateOpener(
 
   const context = openerContexts[scenarioId] ?? openerContexts.improv;
 
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await doubaoClient.chat.completions.create({
+    model: "ep-20260713140908-gltxz",
     messages: [
       {
         role: "system",
@@ -235,8 +243,8 @@ ${COACHING_SCHEMA}
 大部分回合（约70%）给出教练建议 — 即使好的回应也可以获得具体的正面强化加一个改进点。只有真正出色、无需补充时才返回 coaching: null。`;
   }
 
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await doubaoClient.chat.completions.create({
+    model: "ep-20260713140908-gltxz",
     messages: [{ role: "system", content: systemPrompt }, ...history],
     response_format: { type: "json_object" },
     temperature: 0.85,
@@ -296,8 +304,8 @@ export async function analyzeSession(
 - "phrases"：3 个这次对话中值得复用的自然中文表达
 - 要具体到这次实际对话，不要给泛泛建议`;
 
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await doubaoClient.chat.completions.create({
+    model: "ep-20260713140908-gltxz",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: `对话记录：\n\n${transcript}` },
@@ -327,8 +335,8 @@ export async function analyzeOnboardingDiagnostic(
     .map((m) => `${m.role === "user" ? "学习者" : "教练"}：${m.text}`)
     .join("\n");
 
-  const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await doubaoClient.chat.completions.create({
+    model: "ep-20260713140908-gltxz",
     messages: [
       {
         role: "system",
