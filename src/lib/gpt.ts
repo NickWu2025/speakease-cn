@@ -4,7 +4,7 @@ import { RolePlayConfig, PERSONALITY_DESC, CULTURE_DESC } from "@/types/roleplay
 // 豆包 client（对话、分析）
 const doubaoClient = new OpenAI({
   apiKey: import.meta.env.VITE_DOUBAO_API_KEY ?? "",
-  baseURL: "/api/ark",
+  baseURL: typeof window !== "undefined" ? `${window.location.origin}/api/ark` : "https://ark.cn-beijing.volces.com/api/v3",
   dangerouslyAllowBrowser: true,
 });
 
