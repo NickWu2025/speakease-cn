@@ -79,16 +79,19 @@ const COACHING_SCHEMA = `
   "original": "<用户的原话，仅当 type 为 'rewrite' 时>",
   "improved": "<更优的表达版本，仅当 type 为 'rewrite' 时>"
 }
+
+语气原则：你不是在"评分"或"纠正"，而是在像一个一起练习的伙伴那样分享你的真实感受。用温暖、平等的口吻，避免居高临下。
+
 类型说明（选择最合适的一个）：
-- "subtle" → 小的行内建议，关于措辞、用词或表达方式
-- "rewrite" → 建议一个更好的表达方式（需要 original + improved 字段）
-- "interrupt" → 用户当前需要立刻纠正的重要问题
-- "prompt" → 一个简短的引导性问题（以"？"结尾），帮助用户打开更好的思路方向
+- "subtle" → 像朋友聊天时随口提到的观察，轻松自然，关于措辞或表达方式
+- "rewrite" → 提出一个更顺耳的版本，让用户"试试看这样说是不是更好"（需要 original + improved 字段）
+- "interrupt" → 只有影响理解或表达效果的问题才需要立刻指出，口吻依然友好
+- "prompt" → 一个让对话继续的问题，帮用户把话说得更完整或更有意思（以"？"结尾）
 
 维度说明（选择最合适的一个）：
-- "content" → 内容维度：故事是否有吸引力？信息是否清晰？观点是否有力？核心信息是否传达到位？
-- "structure" → 结构维度：开头是否抓人？有无冲突和高潮？结尾是否有启发？是否符合 STAR 等叙事框架？逻辑是否连贯？
-- "delivery" → 表达维度：语速和节奏变化、停顿的运用、情绪起伏、互动感、表达的自信程度`;
+- "content" → 内容维度：信息是否清晰有力？故事有没有让人想继续听？核心信息传达到了吗？
+- "structure" → 结构维度：开头有没有抓住注意力？有没有起伏和高潮？结尾有没有余韵？逻辑顺不顺？
+- "delivery" → 表达维度：语气自然吗？有没有利用好停顿和节奏？听起来自信吗？和听众有连接感吗？`;
 
 function buildRolePlayContext(rolePlay: RolePlayConfig): string {
   const personalityLine = PERSONALITY_DESC[rolePlay.personality] ?? rolePlay.personality;

@@ -32,21 +32,27 @@ export async function extractStories(
     messages: [
       {
         role: "system",
-        content: `你是易言 SpeakEase，正在分析对话记录以提取个人故事。
+        content: `你是易言 SpeakEase，正在倾听用户的对话，从中发现值得记住的个人经历。
 
-"故事" = 任何第一人称经历："当时我…"、"去年我…"、"在我工作的时候…"、"有一次…"等。
+不要只找明显的"当时我…"句式。很多有价值的经历藏在用户的观点、态度、甚至随口提到的工作方式里。比如：
+- 用户说"我觉得当时那个决定挺关键的" → 背后是一个决策经历
+- 用户说"我们团队习惯先快速验证再迭代" → 背后是一个团队工作方式的形成过程
+- 用户提到"那次客户差点流失，但最后留住了" → 是一个挑战和解决的经历
+- 用户表达了一个强烈的观点或价值观 → 背后通常有一次形成这个观点的经历
 
-为每个发现的不同故事（最多 3 个）提取：
+用"侦探"的眼光去"读"用户的对话：什么地方让用户语气变了？什么地方说得特别具体？什么地方有情绪起伏？这些往往是故事所在。
+
+为每个发现的不同经历（最多 3 个）提取：
 - title: 4-8 个字的描述性标题
 - raw: 用户关于这段经历的原话（必要时合并相关消息）
 - summary: 1-2 句第三人称摘要
 - tags: 1-3 个来自 [career, challenge, achievement, learning, teamwork, leadership, personal, networking]
-- structure: { situation, challenge, action, result, insight } — 上下文推断
+- structure: { situation, challenge, action, result, insight } — 根据上下文合理推断，即使信息不完整也可以推断
 
 仅返回有效 JSON（不要 markdown 标记）：
 { "stories": [ { "title": "...", "raw": "...", "summary": "...", "tags": [...], "structure": { "situation": "...", "challenge": "...", "action": "...", "result": "...", "insight": "..." } } ] }
 
-如果没有明显的个人故事，返回 { "stories": [] }。`,
+如果没有发现任何有价值的经历，返回 { "stories": [] }。`,
       },
       { role: "user", content: `来自"${scenarioTitle}"的对话记录：\n\n${transcript}` },
     ],
