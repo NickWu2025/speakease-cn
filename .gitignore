@@ -29,3 +29,5 @@ bun.lockb
 speakflow-your-ai-conversation-coach/
 .env
 api/
+!cloud-functions/api/
+!edgeone.json
