@@ -240,10 +240,18 @@ export default function Onboarding() {
 
   // ── Skip onboarding ──────────────────────────────────────────
   const handleSkip = () => {
-    const userStr = localStorage.getItem("speakflow_user");
-    if (!userStr) return;
-    const user = JSON.parse(userStr);
+    let currentUser = user;
+    if (!currentUser) {
+      const guestId = `guest_${Date.now()}`;
+      currentUser = { id: guestId, name: "用户", email: "", isGuest: true };
+      localStorage.setItem("speakflow_user", JSON.stringify(currentUser));
+    }
     const skipProfile = {
+      id: currentUser.id,
+      name: currentUser.name,
+      email: currentUser.email,
+      avatarUrl: currentUser.avatarUrl,
+      isGuest: currentUser.isGuest,
       onboardingCompleted: true,
       proficiencyLevel: "intermediate",
       goals: ["presentation"],
@@ -252,8 +260,9 @@ export default function Onboarding() {
       areasToImprove: [],
       recommendedScenarios: ["elevator_pitch"],
       coachNote: "用户跳过了 onboarding",
+      createdAt: new Date().toISOString(),
     };
-    localStorage.setItem(`speakflow_profile_${user.id}`, JSON.stringify(skipProfile));
+    saveProfile(skipProfile as any);
     navigate("/");
   };
 
