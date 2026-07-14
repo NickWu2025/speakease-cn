@@ -59,7 +59,7 @@ export class XfyunTTS {
           business: {
             aue: "raw",
             auf: "audio/L16;rate=16000",
-            vcn: "x4_lingxiaoxuan_oral",
+            vcn: "x4_xiaoyan",
             speed: 50,
             volume: 50,
             pitch: 50,

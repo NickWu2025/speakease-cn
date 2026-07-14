@@ -202,7 +202,13 @@ export class XfyunRecognizer {
   private handleMessage(data: any): void {
     if (data.code !== 0) {
       console.error('[讯飞ASR] 服务端错误:', data);
+      if (data.code === 10165) {
+        this.callbacks.onEnd(this.currentText);
+        this.cleanup();
+        return;
+      }
       this.callbacks.onError(data.message || `识别错误: ${data.code}`);
+      this.cleanup();
       return;
     }
     if (data.data && data.data.result) {
