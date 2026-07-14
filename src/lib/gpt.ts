@@ -4,7 +4,7 @@ import { RolePlayConfig, PERSONALITY_DESC, CULTURE_DESC } from "@/types/roleplay
 // 豆包 client（对话、分析）
 const doubaoClient = new OpenAI({
   apiKey: import.meta.env.VITE_DOUBAO_API_KEY ?? "",
-  baseURL: import.meta.env.DEV ? "http://localhost:8080/api/ark" : "https://ark.cn-beijing.volces.com/api/v3",
+  baseURL: "/api/ark",
   dangerouslyAllowBrowser: true,
 });
 
@@ -261,10 +261,38 @@ export async function analyzeOnboardingDiagnostic(
   return JSON.parse(raw) as DiagnosticResult;
 }
 
+// 讯飞 TTS 实例缓存
+let xfyunTTSInstance: { stop: () => void } | null = null;
+
 export async function speakText(text: string, signal?: AbortSignal): Promise<void> {
   if (signal?.aborted) return;
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
 
+  if (xfyunTTSInstance) {
+    xfyunTTSInstance.stop();
+    xfyunTTSInstance = null;
+  }
+
+  // 优先使用讯飞 TTS
+  const { newXfyunTTS } = await import("@/lib/xfyunTTS");
+  const tts = newXfyunTTS();
+
+  if (tts) {
+    xfyunTTSInstance = tts;
+    signal?.addEventListener("abort", () => {
+      tts.stop();
+      xfyunTTSInstance = null;
+    });
+    try {
+      await tts.speak(text);
+    } catch (e) {
+      console.error("[TTS] 讯飞合成失败，回退到浏览器TTS:", e);
+    }
+    xfyunTTSInstance = null;
+    return;
+  }
+
+  // 回退：浏览器内置 TTS
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
 
   return new Promise<void>((resolve) => {
@@ -277,10 +305,7 @@ export async function speakText(text: string, signal?: AbortSignal): Promise<voi
     const zhVoice = voices.find((v) => v.lang.startsWith("zh"));
     if (zhVoice) utterance.voice = zhVoice;
 
-    const cleanup = () => {
-      resolve();
-    };
-
+    const cleanup = () => { resolve(); };
     utterance.onend = cleanup;
     utterance.onerror = cleanup;
     signal?.addEventListener("abort", () => {

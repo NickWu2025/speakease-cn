@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/ark/(.*)", "destination": "https://ark.cn-beijing.volces.com/api/v3/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

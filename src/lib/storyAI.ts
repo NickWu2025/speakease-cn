@@ -4,7 +4,7 @@ import { SessionRecord, RATING_SCORE } from "@/lib/sessionStore";
 
 const client = new OpenAI({
   apiKey: import.meta.env.VITE_DOUBAO_API_KEY ?? "",
-  baseURL: import.meta.env.DEV ? "http://localhost:8080/api/ark" : "https://ark.cn-beijing.volces.com/api/v3",
+  baseURL: "/api/ark",
   dangerouslyAllowBrowser: true,
 });
 
